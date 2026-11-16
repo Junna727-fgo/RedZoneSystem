@@ -1,35 +1,38 @@
 package com.redzone.model;
 
 public class TaiKhoan {
-    private int maTK;
-    private int maVaiTro;
+    private int id;
     private String username;
-    private String hoTen;
-    private String role;
-    private String trangThai;
+    private String password;
+    private String fullName;
+    private String role; // Admin, IT, Member
+    private int trangThai; // 1: Hoạt động, 0: Khóa, 2: Chờ duyệt
+    private double balance;
 
-    public TaiKhoan() {
-    }
+    public TaiKhoan() {}
 
-    public TaiKhoan(int maTK, int maVaiTro, String username, String hoTen, String role, String trangThai) {
-        this.maTK = maTK;
-        this.maVaiTro = maVaiTro;
+    public TaiKhoan(int id, String username, String password, String fullName, String role, int trangThai, double balance) {
+        this.id = id;
         this.username = username;
-        this.hoTen = hoTen;
+        this.password = password;
+        this.fullName = fullName;
         this.role = role;
         this.trangThai = trangThai;
+        this.balance = balance;
     }
 
-    public int getMaTK() { return maTK; }
-    public void setMaTK(int maTK) { this.maTK = maTK; }
-    public int getMaVaiTro() { return maVaiTro; }
-    public void setMaVaiTro(int maVaiTro) { this.maVaiTro = maVaiTro; }
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
-    public String getHoTen() { return hoTen; }
-    public void setHoTen(String hoTen) { this.hoTen = hoTen; }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+    public int getTrangThai() { return trangThai; }
+    public void setTrangThai(int trangThai) { this.trangThai = trangThai; }
+    public double getBalance() { return balance; }
+    public void setBalance(double balance) { this.balance = balance; }
 }
