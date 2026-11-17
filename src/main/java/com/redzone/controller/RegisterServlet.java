@@ -1,40 +1,29 @@
 package com.redzone.controller;
 
 import com.redzone.dao.TaiKhoanDAO;
+import com.redzone.model.TaiKhoan;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 import java.io.IOException;
 
 @WebServlet("/register")
 public class RegisterServlet extends HttpServlet {
+    private TaiKhoanDAO dao = new TaiKhoanDAO();
+
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
+        String user = request.getParameter("username");
+        String pass = request.getParameter("password");
+        String fullName = request.getParameter("fullName");
 
-        String username = request.getParameter("username");
-        String password = request.getParameter("password");
-        String hoTen = request.getParameter("hoTen");
-        String sdt = request.getParameter("sdt");
-        String cccd = request.getParameter("cccd");
-
-        TaiKhoanDAO dao = new TaiKhoanDAO();
-
-        if (dao.checkUserExist(username)) {
-            request.setAttribute("error", "Tên đăng nhập đã tồn tại!");
-            request.getRequestDispatcher("register.jsp").forward(request, response);
-            return;
-        }
-
-        if (dao.registerUser(username, password, hoTen, sdt, cccd)) {
-            request.setAttribute("msg", "Đăng ký thành công! Hãy đăng nhập.");
-            request.getRequestDispatcher("index.jsp").forward(request, response);
+        TaiKhoan tk = new TaiKhoan(0, user, pass, fullName, "Member", 2, 0.0); // 2: Chờ duyệt
+        boolean success = dao.addUser(tk);
+        if (success) {
+            response.sendRedirect("index.jsp?success=registered");
         } else {
-            request.setAttribute("error", "Lỗi lưu Database!");
-            request.getRequestDispatcher("register.jsp").forward(request, response);
+            response.sendRedirect("register.jsp?error=failed");
         }
     }
 }
