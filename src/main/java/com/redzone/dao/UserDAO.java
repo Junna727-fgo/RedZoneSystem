@@ -10,37 +10,58 @@ import java.util.List;
 
 public class UserDAO extends DBConnection {
 
-    // UC-04.4: Cập nhật hồ sơ tài khoản cá nhân
-    public boolean updateProfile(int userId, String fullName, String phone, String email) {
-        String sql = "UPDATE Users SET full_name = ?, phone = ?, email = ? WHERE user_id = ?";
+    public User getUserById(int maTK) {
+        String sql = "SELECT MaTK, Username, HoTen, SDT, SoDuVi, TrangThai FROM TAI_KHOAN WHERE MaTK = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, fullName);
+            ps.setInt(1, maTK);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                User u = new User();
+                u.setUserId(rs.getInt("MaTK"));
+                u.setUsername(rs.getString("Username"));
+                u.setFullName(rs.getNString("HoTen"));
+                u.setPhone(rs.getString("SDT"));
+                u.setEmail(rs.getString("Username") + "@redzone.vn");
+                u.setBalance(rs.getBigDecimal("SoDuVi") != null ? rs.getBigDecimal("SoDuVi") : BigDecimal.ZERO);
+                u.setStatus(rs.getString("TrangThai"));
+                return u;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updateProfile(int userId, String fullName, String phone, String email) {
+        String sql = "UPDATE TAI_KHOAN SET HoTen = ?, SDT = ? WHERE MaTK = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setNString(1, fullName);
             ps.setString(2, phone);
-            ps.setString(3, email);
-            ps.setInt(4, userId);
+            ps.setInt(3, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    // UC-09 & UC-10.1: Nạp tiền & cập nhật số dư tài khoản
     public boolean topUpBalance(int userId, BigDecimal amount) {
-        String sql = "UPDATE Users SET balance = balance + ? WHERE user_id = ?";
+        String sql = "UPDATE TAI_KHOAN SET SoDuVi = ISNULL(SoDuVi, 0) + ? WHERE MaTK = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setBigDecimal(1, amount);
             ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    // Trừ tiền khi gọi món/combo tại máy (UC-12)
     public boolean deductBalance(int userId, BigDecimal amount) {
-        String sql = "UPDATE Users SET balance = balance - ? WHERE user_id = ? AND balance >= ?";
+        String sql = "UPDATE TAI_KHOAN SET SoDuVi = SoDuVi - ? WHERE MaTK = ? AND SoDuVi >= ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setBigDecimal(1, amount);
@@ -48,11 +69,11 @@ public class UserDAO extends DBConnection {
             ps.setBigDecimal(3, amount);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    // UC-07.2: Tìm kiếm & lọc mã máy, mã phòng
     public List<Computer> searchComputers(String keyword, String roomFilter) {
         List<Computer> list = new ArrayList<>();
         String sql = "SELECT * FROM Computers WHERE 1=1";
@@ -74,16 +95,15 @@ public class UserDAO extends DBConnection {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(new Computer(
-                    rs.getInt("machine_id"),
-                    rs.getString("machine_code"),
-                    rs.getNString("room_name"),
-                    rs.getNString("specs"),
-                    rs.getBigDecimal("price_per_hour"),
-                    rs.getString("status")
+                        rs.getInt("machine_id"),
+                        rs.getString("machine_code"),
+                        rs.getNString("room_name"),
+                        rs.getNString("specs"),
+                        rs.getBigDecimal("price_per_hour"),
+                        rs.getString("status")
                 ));
             }
         } catch (Exception e) {
-            // Fallback dữ liệu mẫu nếu DB chưa tạo bảng Computers
             list = getDefaultComputers(keyword, roomFilter);
         }
         if (list.isEmpty() && (keyword == null || keyword.isEmpty()) && (roomFilter == null || "ALL".equals(roomFilter))) {
@@ -112,7 +132,6 @@ public class UserDAO extends DBConnection {
         return filtered;
     }
 
-    // UC-08: Lưu yêu cầu đặt trước phòng/máy trạm
     public boolean createBooking(int userId, String machineCode, String roomName, String timeSlot, int hours) {
         String sql = "INSERT INTO Bookings (user_id, machine_code, room_name, time_slot, hours, status) VALUES (?, ?, ?, ?, ?, 'PENDING')";
         try (Connection conn = getConnection();
@@ -128,7 +147,6 @@ public class UserDAO extends DBConnection {
         }
     }
 
-    // UC-12 & UC-13.1: Lưu đơn gọi món & combo tại máy
     public boolean createServiceOrder(int userId, String machineCode, String itemName, int quantity, String promoCode, BigDecimal finalAmount) {
         String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'PREPARING')";
         try (Connection conn = getConnection();
