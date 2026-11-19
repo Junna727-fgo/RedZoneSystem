@@ -16,10 +16,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-@WebServlet(name = "MemberPortalServlet", urlPatterns = {"/profile", "/member"})
+@WebServlet(name = "MemberPortalServlet", urlPatterns = {"/profile", "/member", "/user/dashboard"})
 public class MemberPortalServlet extends HttpServlet {
 
     private void updateRemainingTime(HttpSession session, BigDecimal balance) {
+        if (balance == null) {
+            balance = BigDecimal.ZERO;
+        }
         int remainingMinutes = balance
                 .multiply(new BigDecimal("60"))
                 .divide(new BigDecimal("10000"), 0, RoundingMode.DOWN)
@@ -31,19 +34,26 @@ public class MemberPortalServlet extends HttpServlet {
     private boolean initSessionData(HttpSession session, UserDAO userDAO) {
         TaiKhoan userLog = (TaiKhoan) session.getAttribute("userLog");
         if (userLog == null) {
+            userLog = (TaiKhoan) session.getAttribute("user");
+        }
+        if (userLog == null) {
             return false;
         }
 
         User currentUser = (User) session.getAttribute("currentUser");
-        if (currentUser == null || currentUser.getUserId() != userLog.getMaTK()) {
-            currentUser = userDAO.getUserById(userLog.getMaTK());
+        if (currentUser == null || currentUser.getUserId() != userLog.getId()) {
+            currentUser = userDAO.getUserById(userLog.getId());
             if (currentUser == null) {
                 currentUser = new User();
-                currentUser.setUserId(userLog.getMaTK());
+                currentUser.setUserId(userLog.getId());
                 currentUser.setUsername(userLog.getUsername());
-                currentUser.setFullName(userLog.getHoTen());
+                currentUser.setFullName(userLog.getFullName());
+                currentUser.setBalance(BigDecimal.valueOf(userLog.getBalance()));
+                currentUser.setStatus(userLog.getTrangThai() == 1 ? "Hoạt động"
+                        : (userLog.getTrangThai() == 0 ? "Khóa" : "Chờ duyệt"));
+            }
+            if (currentUser.getBalance() == null) {
                 currentUser.setBalance(BigDecimal.ZERO);
-                currentUser.setStatus(userLog.getTrangThai());
             }
             session.setAttribute("currentUser", currentUser);
         }

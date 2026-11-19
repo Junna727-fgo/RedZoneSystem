@@ -18,17 +18,20 @@ public class LoginServlet extends HttpServlet {
         String pass = request.getParameter("password");
 
         TaiKhoan tk = dao.checkLogin(user, pass);
-        if ("Admin".equalsIgnoreCase(tk.getRole())) {
-            // Gọi đến Admin Controller
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+        if (tk != null) {
+            HttpSession session = request.getSession();
+            session.setAttribute("user", tk);
+            session.setAttribute("userLog", tk);
 
-        } else if ("IT".equalsIgnoreCase(tk.getRole())) {
-            // SỬA Ở ĐÂY: Gọi đến IT Dashboard Controller thay vì file .jsp
-            response.sendRedirect(request.getContextPath() + "/it/dashboard");
-
+            if ("Admin".equalsIgnoreCase(tk.getRole())) {
+                response.sendRedirect(request.getContextPath() + "/admin/dashboard");
+            } else if ("IT".equalsIgnoreCase(tk.getRole())) {
+                response.sendRedirect(request.getContextPath() + "/it/dashboard");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/profile");
+            }
         } else {
-            // SỬA LUÔN Ở ĐÂY: Gọi đến User/Member Controller
-            response.sendRedirect(request.getContextPath() + "/user/dashboard");
+            response.sendRedirect(request.getContextPath() + "/index.jsp?error=invalid");
         }
     }
 }
