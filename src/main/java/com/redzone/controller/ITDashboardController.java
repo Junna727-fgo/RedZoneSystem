@@ -36,8 +36,7 @@ public class ITDashboardController extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         TaiKhoan currentUser = (session != null) ? (TaiKhoan) session.getAttribute("user") : null;
-        int maTKLap = (currentUser != null) ? currentUser.getMaTK() : 1; // Lấy MaTK của IT đang đăng nhập
-
+        int maTK = (currentUser != null) ? currentUser.getId() : 1; // Lấy ID của IT đang đăng nhập
         if ("updateMayStatus".equals(action)) {
             int maMay = Integer.parseInt(request.getParameter("maMay"));
             String trangThai = request.getParameter("trangThai");
@@ -63,7 +62,7 @@ public class ITDashboardController extends HttpServlet {
             bb.setMaMay(Integer.parseInt(request.getParameter("maMay")));
             String maTBStr = request.getParameter("maThietBi");
             bb.setMaThietBi((maTBStr != null && !maTBStr.isEmpty()) ? Integer.parseInt(maTBStr) : null);
-            bb.setMaTKLap(maTKLap);
+            bb.setMaTKLap(maTK);
             bb.setMoTaSuCo(request.getParameter("moTaSuCo"));
             bb.setChiPhi(Double.parseDouble(request.getParameter("chiPhi")));
             itDAO.lapBienBanBaoTri(bb);

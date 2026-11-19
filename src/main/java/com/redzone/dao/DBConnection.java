@@ -4,10 +4,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 public class DBConnection {
-    // URL kết nối đến DB QUAN_LY_PHONG_GAME
-    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=QUAN_LY_PHONG_GAME;encrypt=true;trustServerCertificate=true;";
-    private static final String USER = "sa"; // Sửa thành username SQL Server của bạn
-    private static final String PASS = "12345"; // Sửa thành password SQL Server của bạn
+    private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=QUAN_LY_PHONG_GAME;encrypt=false;trustServerCertificate=true;";
+    private static final String USER = "sa";
+    private static final String PASS = "123456789";
 
     public static Connection getConnection() {
         Connection conn = null;
@@ -21,7 +20,6 @@ public class DBConnection {
         return conn;
     }
 
-    // Hàm main để test chạy thử (Chuột phải -> Run)
     public static void main(String[] args) {
         getConnection();
     }
