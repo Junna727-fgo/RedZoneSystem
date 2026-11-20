@@ -2,6 +2,7 @@ package com.redzone.controller;
 
 import com.redzone.dao.TaiKhoanDAO;
 import com.redzone.model.TaiKhoan;
+import com.redzone.util.PasswordUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -45,7 +46,8 @@ public class AdminUserController extends HttpServlet {
             String role = request.getParameter("role");
             double balance = Double.parseDouble(request.getParameter("balance"));
 
-            TaiKhoan tk = new TaiKhoan(0, user, pass, fullName, role, 1, balance);
+            String hashedPass = PasswordUtil.hashSHA256(pass);
+            TaiKhoan tk = new TaiKhoan(0, user, hashedPass, fullName, role, 1, balance);
             dao.addUser(tk);
         } else if ("update".equals(type)) {
             int id = Integer.parseInt(request.getParameter("id"));
@@ -56,7 +58,9 @@ public class AdminUserController extends HttpServlet {
         } else if ("reset".equals(type)) {
             int id = Integer.parseInt(request.getParameter("id"));
             String newPass = request.getParameter("newPassword");
-            dao.resetPassword(id, newPass);
+
+            String hashedNewPass = PasswordUtil.hashSHA256(newPass);
+            dao.resetPassword(id, hashedNewPass);
         }
         response.sendRedirect(request.getContextPath() + "/admin/users");
     }

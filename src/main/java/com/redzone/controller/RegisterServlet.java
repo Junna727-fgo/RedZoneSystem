@@ -2,6 +2,7 @@ package com.redzone.controller;
 
 import com.redzone.dao.TaiKhoanDAO;
 import com.redzone.model.TaiKhoan;
+import com.redzone.util.PasswordUtil;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
@@ -18,7 +19,8 @@ public class RegisterServlet extends HttpServlet {
         String pass = request.getParameter("password");
         String fullName = request.getParameter("fullName");
 
-        TaiKhoan tk = new TaiKhoan(0, user, pass, fullName, "Member", 2, 0.0); // 2: Chờ duyệt
+        String hashedPass = PasswordUtil.hashSHA256(pass);
+        TaiKhoan tk = new TaiKhoan(0, user, hashedPass, fullName, "Member", 2, 0.0); // 2: Chờ duyệt
         boolean success = dao.addUser(tk);
         if (success) {
             response.sendRedirect("index.jsp?success=registered");

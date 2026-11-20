@@ -148,6 +148,23 @@
             color: var(--red-primary);
         }
 
+        .remember-cyber {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #9ca3af;
+            font-size: 0.98rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .remember-cyber input[type="checkbox"] {
+            accent-color: var(--red-primary);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
         .btn-cyber-login {
             background: linear-gradient(90deg, var(--red-dark), var(--red-primary));
             border: none;
@@ -229,27 +246,39 @@
                     <i class="fa-solid fa-ban me-1"></i> Bạn không có quyền truy cập khu vực này!
                 </div>
             </c:if>
+            <c:if test="${param.error == 'login_required'}">
+                <div class="alert-cyber">
+                    <i class="fa-solid fa-shield-halved me-1"></i> Vui lòng đăng nhập để tiếp tục!
+                </div>
+            </c:if>
             <c:if test="${param.success == 'registered'}">
                 <div class="alert-cyber alert-cyber-success">
                     <i class="fa-solid fa-circle-check me-1"></i> Đăng ký thành công! Vui lòng chờ Admin duyệt.
                 </div>
             </c:if>
 
-            <form action="login" method="post">
+            <form action="${pageContext.request.contextPath}/login" method="post">
                 <div class="mb-3">
                     <label class="form-label">Tên đăng nhập</label>
                     <div class="input-group-cyber">
-                        <input type="text" name="username" class="form-control-cyber" placeholder="Nhập tài khoản..." required autocomplete="off">
+                        <input type="text" name="username" value="${cookie.c_user.value}" class="form-control-cyber" placeholder="Nhập tài khoản..." required autocomplete="off">
                         <i class="fa-solid fa-user"></i>
                     </div>
                 </div>
 
-                <div class="mb-4">
+                <div class="mb-3">
                     <label class="form-label">Mật khẩu</label>
                     <div class="input-group-cyber">
                         <input type="password" name="password" class="form-control-cyber" placeholder="Nhập mật khẩu..." required>
                         <i class="fa-solid fa-lock"></i>
                     </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="remember-cyber">
+                        <input type="checkbox" name="remember" ${cookie.c_remember.value == 'true' ? 'checked' : ''}>
+                        Ghi nhớ tài khoản đăng nhập
+                    </label>
                 </div>
 
                 <button type="submit" class="btn btn-cyber-login">
