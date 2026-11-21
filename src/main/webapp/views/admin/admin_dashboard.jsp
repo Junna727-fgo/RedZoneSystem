@@ -9,241 +9,127 @@
     <title>RedZone Cyber - Admin Control Center</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Montserrat:ital,wght@0,800;1,900&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-dark: #0a0a0c;
-            --card-bg: #141418;
-            --card-hover: #1b1b22;
-            --red-primary: #ff1e27;
-            --red-glow: rgba(255, 30, 39, 0.35);
-            --border-color: #2a2a35;
-            --text-main: #f1f1f1;
-            --text-muted: #9ca3af;
+            --bg-abyss: #030a18;
+            --card-bg: #07193d;
+            --card-hover: #0b2454;
+            --cyan: #00e5ff;
+            --cyan-glow: rgba(0, 229, 255, 0.35);
+            --border: rgba(0, 229, 255, 0.28);
+            --text-main: #f4f9ff;
+            --text-muted: #8fb4df;
+            --danger: #ff2a55;
         }
-
+        * { box-sizing: border-box; }
         body {
-            background-color: var(--bg-dark);
-            color: var(--text-main);
-            font-family: 'Rajdhani', sans-serif;
-            background-image:
-                radial-gradient(circle at 15% 15%, rgba(255, 30, 39, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(255, 30, 39, 0.06) 0%, transparent 40%);
+            margin: 0;
             min-height: 100vh;
+            background: radial-gradient(circle at 20% 15%, #0e3888 0%, #061430 48%, #020814 100%);
+            color: var(--text-main);
+            font-family: 'Chakra Petch', sans-serif;
         }
-
-        /* Navbar Styling */
-        .navbar-cyber {
-            background-color: rgba(15, 15, 19, 0.95);
-            border-bottom: 2px solid var(--red-primary);
-            box-shadow: 0 4px 20px rgba(255, 30, 39, 0.2);
+        .navbar-p3r {
+            background: rgba(4, 14, 36, 0.95);
+            border-bottom: 2px solid var(--cyan);
+            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.18);
             padding: 0.8rem 2rem;
         }
-
         .brand-logo {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 1.5rem;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 1.45rem;
             color: #fff !important;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             display: flex;
             align-items: center;
             gap: 10px;
+            text-decoration: none;
         }
-
-        .brand-logo span {
-            color: var(--red-primary);
-            text-shadow: 0 0 10px var(--red-glow);
-        }
-
+        .brand-logo i, .brand-logo span { color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
         .btn-logout {
-            border: 1px solid var(--red-primary);
-            color: var(--red-primary);
-            font-weight: 600;
+            border: 1px solid var(--danger);
+            color: #ff8ca3;
+            font-weight: 700;
             letter-spacing: 1px;
-            transition: all 0.3s ease;
+            transition: 0.2s;
         }
-
-        .btn-logout:hover {
-            background-color: var(--red-primary);
-            color: #fff;
-            box-shadow: 0 0 15px var(--red-glow);
-        }
-
-        /* Section Titles */
+        .btn-logout:hover { background: var(--danger); color: #fff; box-shadow: 0 0 14px rgba(255, 42, 85, 0.45); }
         .section-header {
-            border-left: 4px solid var(--red-primary);
+            border-left: 4px solid var(--cyan);
             padding-left: 12px;
             margin-bottom: 1.5rem;
-            font-family: 'Orbitron', sans-serif;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
             font-size: 1.1rem;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             color: #fff;
         }
-
-        /* Stat Cards (Hàng 1) */
         .stat-card {
-            background: linear-gradient(145deg, #16161c, #101014);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--red-primary);
-            border-radius: 10px;
+            background: linear-gradient(145deg, #0b2454, #05122b);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--cyan);
+            border-radius: 6px;
             padding: 1.5rem;
             height: 100%;
             position: relative;
             overflow: hidden;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: 0.25s;
         }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(255, 30, 39, 0.18);
-            border-color: var(--red-primary);
-        }
-
-        .stat-title {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--text-muted);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-value {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 2rem;
-            font-weight: 800;
-            color: #fff;
-            margin: 0;
-        }
-
-        .stat-value.highlight-red {
-            color: var(--red-primary);
-            text-shadow: 0 0 12px var(--red-glow);
-        }
-
-        .stat-icon {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 3.2rem;
-            color: rgba(255, 30, 39, 0.12);
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-
-        .stat-card:hover .stat-icon {
-            color: rgba(255, 30, 39, 0.25);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .btn-report-link {
-            position: relative;
-            z-index: 2;
-            border: 1px solid var(--red-primary);
-            color: var(--red-primary);
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-report-link:hover {
-            background-color: var(--red-primary);
-            color: #fff;
-            box-shadow: 0 0 12px var(--red-glow);
-        }
-
-        /* Module Action Cards (Hàng 2) */
+        .stat-card:hover { transform: translateY(-4px); border-color: var(--cyan); box-shadow: 0 8px 24px rgba(0, 229, 255, 0.18); }
+        .stat-title { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem; }
+        .stat-value { font-family: 'Montserrat', sans-serif; font-size: 2rem; font-weight: 900; font-style: italic; color: #fff; margin: 0; position: relative; z-index: 2; }
+        .stat-value.highlight-cyan { color: var(--cyan); text-shadow: 0 0 12px var(--cyan-glow); }
+        .stat-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 3.2rem; color: rgba(0, 229, 255, 0.14); pointer-events: none; transition: 0.25s; }
+        .stat-card:hover .stat-icon { color: rgba(0, 229, 255, 0.28); transform: translateY(-50%) scale(1.08); }
+        .btn-report-link { position: relative; z-index: 2; border: 1px solid var(--cyan); color: var(--cyan); font-size: 0.85rem; transition: 0.2s; }
+        .btn-report-link:hover { background: var(--cyan); color: var(--bg-abyss); box-shadow: 0 0 12px var(--cyan-glow); }
         .module-card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-top: 3px solid var(--cyan);
+            border-radius: 8px;
             padding: 2rem 1.5rem;
             text-align: center;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: all 0.3s ease;
+            transition: 0.25s;
         }
-
-        .module-card:hover {
-            background-color: var(--card-hover);
-            border-color: var(--red-primary);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 15px rgba(255, 30, 39, 0.2);
-            transform: translateY(-5px);
-        }
-
+        .module-card:hover { background: var(--card-hover); border-color: var(--cyan); transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 16px rgba(0, 229, 255, 0.2); }
         .module-icon-box {
-            width: 65px;
-            height: 65px;
-            margin: 0 auto 1.2rem;
-            background: rgba(255, 30, 39, 0.1);
-            border: 1px solid rgba(255, 30, 39, 0.3);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.8rem;
-            color: var(--red-primary);
-            transition: all 0.3s ease;
+            width: 64px; height: 64px; margin: 0 auto 1.2rem;
+            background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.35);
+            border-radius: 10px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.75rem; color: var(--cyan); transition: 0.25s;
         }
-
-        .module-card:hover .module-icon-box {
-            background: var(--red-primary);
-            color: #fff;
-            box-shadow: 0 0 20px var(--red-glow);
+        .module-card:hover .module-icon-box { background: var(--cyan); color: var(--bg-abyss); box-shadow: 0 0 18px var(--cyan-glow); }
+        .module-title { font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; font-style: italic; text-transform: uppercase; color: #fff; margin-bottom: 0.6rem; }
+        .module-desc { color: var(--text-muted); font-size: 0.96rem; margin-bottom: 1.5rem; }
+        .btn-p3r {
+            background: linear-gradient(90deg, #00c4ff, #1858ff);
+            border: none; color: #020a18; font-family: 'Montserrat', sans-serif; font-weight: 900; font-style: italic;
+            letter-spacing: 1.2px; text-transform: uppercase; padding: 0.65rem 1.5rem; border-radius: 4px; width: 100%; transition: 0.2s;
         }
-
-        .module-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #fff;
-            margin-bottom: 0.6rem;
-        }
-
-        .module-desc {
-            color: var(--text-muted);
-            font-size: 0.98rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .btn-cyber {
-            background: linear-gradient(90deg, #d90429, #ff1e27);
-            border: none;
-            color: #fff;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 0.65rem 1.5rem;
-            border-radius: 6px;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .btn-cyber:hover {
-            background: linear-gradient(90deg, #ff1e27, #ff4d54);
-            color: #fff;
-            box-shadow: 0 0 20px var(--red-glow);
-        }
+        .btn-p3r:hover { background: linear-gradient(90deg, #ffffff, #52f2ff); color: #020a18; box-shadow: 0 0 18px var(--cyan-glow); }
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-cyber">
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-p3r">
         <div class="container-fluid">
             <a class="navbar-brand brand-logo" href="dashboard">
-                <i class="fa-solid fa-fire-flame-curved text-danger"></i>
+                <i class="fa-solid fa-terminal"></i>
                 REDZONE <span>ADMIN</span>
             </a>
             <div class="d-flex align-items-center gap-3">
                 <span class="text-light fw-semibold">
-                    <i class="fa-solid fa-user-shield text-danger me-1"></i>
+                    <i class="fa-solid fa-user-shield me-1" style="color: var(--cyan);"></i>
                     Xin chào, <strong class="text-white">${sessionScope.user.fullName != null ? sessionScope.user.fullName : 'Admin'}</strong>
                 </span>
                 <a href="${pageContext.request.contextPath}/logout" class="btn btn-logout btn-sm px-3">
@@ -253,13 +139,9 @@
         </div>
     </nav>
 
-    <!-- Main Container -->
     <div class="container py-5">
-
-        <!-- HÀNG 1: THỐNG KÊ TỔNG QUAN -->
         <h5 class="section-header">Tổng Quan Hệ Thống</h5>
         <div class="row g-4 mb-5">
-            <!-- Cột 1: Tổng Tài Khoản -->
             <div class="col-md-4">
                 <div class="stat-card d-flex flex-column justify-content-center">
                     <div class="stat-title">Tổng Tài Khoản</div>
@@ -268,7 +150,6 @@
                 </div>
             </div>
 
-            <!-- Cột 2: Tổng Máy / Phòng -->
             <div class="col-md-4">
                 <div class="stat-card d-flex flex-column justify-content-center">
                     <div class="stat-title">Tổng Máy / Phòng</div>
@@ -277,16 +158,15 @@
                 </div>
             </div>
 
-            <!-- Cột 3: Tổng Doanh Thu + Nút mở Báo cáo chi tiết -->
             <div class="col-md-4">
                 <div class="stat-card d-flex flex-column justify-content-center">
                     <div class="stat-title">Tổng Doanh Thu</div>
-                    <h2 class="stat-value highlight-red">
+                    <h2 class="stat-value highlight-cyan">
                         <fmt:formatNumber value="${totalRevenue}" type="number" maxFractionDigits="0"/> VNĐ
                     </h2>
                     <div class="mt-2">
                         <a href="bao-cao" class="btn btn-sm btn-report-link fw-bold px-3">
-                            <i class="fa-solid fa-chart-line me-1"></i> Xem chi tiết & Xuất báo cáo
+                            <i class="fa-solid fa-chart-line me-1"></i> Xem chi tiết &amp; Xuất báo cáo
                         </a>
                     </div>
                     <i class="fa-solid fa-sack-dollar stat-icon"></i>
@@ -294,58 +174,47 @@
             </div>
         </div>
 
-        <!-- HÀNG 2: CÁC CHỨC NĂNG QUẢN TRỊ -->
         <h5 class="section-header">Trung Tâm Điều Khiển</h5>
         <div class="row g-4">
-            <!-- Module 1: Quản lý Tài Khoản -->
             <div class="col-md-4">
                 <div class="module-card">
                     <div>
-                        <div class="module-icon-box">
-                            <i class="fa-solid fa-user-gear"></i>
-                        </div>
+                        <div class="module-icon-box"><i class="fa-solid fa-user-gear"></i></div>
                         <h4 class="module-title">Quản Lý Tài Khoản</h4>
                         <p class="module-desc">Phân quyền Admin/IT, duyệt thành viên mới, khóa, mở khóa hoặc cấp lại mật khẩu.</p>
                     </div>
-                    <a href="users" class="btn btn-cyber">
+                    <a href="users" class="btn btn-p3r">
                         Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
 
-            <!-- Module 2: Quản lý Phòng & Máy -->
             <div class="col-md-4">
                 <div class="module-card">
                     <div>
-                        <div class="module-icon-box">
-                            <i class="fa-solid fa-server"></i>
-                        </div>
-                        <h4 class="module-title">Quản Lý Phòng & Máy</h4>
+                        <div class="module-icon-box"><i class="fa-solid fa-server"></i></div>
+                        <h4 class="module-title">Quản Lý Phòng &amp; Máy</h4>
                         <p class="module-desc">Thêm, sửa, xóa máy trạm, cài đặt khu vực phòng và cập nhật đơn giá giờ chơi.</p>
                     </div>
-                    <a href="phong-may" class="btn btn-cyber">
+                    <a href="phong-may" class="btn btn-p3r">
                         Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
 
-            <!-- Module 3: Quản lý Menu F&B & Combo -->
             <div class="col-md-4">
                 <div class="module-card">
                     <div>
-                        <div class="module-icon-box">
-                            <i class="fa-solid fa-utensils"></i>
-                        </div>
-                        <h4 class="module-title">Quản Lý Menu F&B</h4>
+                        <div class="module-icon-box"><i class="fa-solid fa-utensils"></i></div>
+                        <h4 class="module-title">Quản Lý Menu F&amp;B</h4>
                         <p class="module-desc">Quản lý thực đơn đồ ăn, thức uống, gói Combo khuyến mãi và số lượng tồn kho.</p>
                     </div>
-                    <a href="dich-vu" class="btn btn-cyber">
+                    <a href="dich-vu" class="btn btn-p3r">
                         Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
                     </a>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -6,293 +6,222 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng Nhập - RedZone Cyber System</title>
-    <!-- Bootstrap 5, FontAwesome & Google Fonts -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
-
-    <style>
-        :root {
-            --bg-dark: #09090b;
-            --card-bg: #131318;
-            --input-bg: #1c1c24;
-            --red-primary: #ff1e27;
-            --red-dark: #b80d14;
-            --red-glow: rgba(255, 30, 39, 0.4);
-            --border-color: #2a2a35;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            color: #fff;
-            font-family: 'Rajdhani', sans-serif;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-            background-image:
-                linear-gradient(rgba(255, 30, 39, 0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 30, 39, 0.04) 1px, transparent 1px),
-                radial-gradient(circle at 50% 50%, rgba(255, 30, 39, 0.12) 0%, transparent 65%);
-            background-size: 40px 40px, 40px 40px, 100% 100%;
-        }
-
-        .login-container {
-            width: 100%;
-            max-width: 430px;
-            padding: 15px;
-            z-index: 2;
-        }
-
-        .login-card {
-            background: linear-gradient(160deg, #16161d 0%, #0e0e12 100%);
-            border: 1px solid var(--border-color);
-            border-top: 3px solid var(--red-primary);
-            border-radius: 14px;
-            padding: 2.5rem 2.2rem;
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 30, 39, 0.15);
-            position: relative;
-        }
-
-        /* Góc trang trí công nghệ */
-        .login-card::after {
-            content: "";
-            position: absolute;
-            bottom: -1px;
-            right: -1px;
-            width: 25px;
-            height: 25px;
-            border-bottom: 3px solid var(--red-primary);
-            border-right: 3px solid var(--red-primary);
-            border-bottom-right-radius: 14px;
-        }
-
-        .brand-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .brand-icon {
-            font-size: 2.6rem;
-            color: var(--red-primary);
-            text-shadow: 0 0 15px var(--red-glow);
-            margin-bottom: 0.5rem;
-        }
-
-        .brand-title {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 800;
-            font-size: 1.75rem;
-            letter-spacing: 2px;
-            margin: 0;
-            color: #fff;
-        }
-
-        .brand-title span {
-            color: var(--red-primary);
-            text-shadow: 0 0 12px var(--red-glow);
-        }
-
-        .brand-subtitle {
-            color: #8b92a5;
-            font-size: 0.95rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            margin-top: 4px;
-        }
-
-        .form-label {
-            color: #d1d5db;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            font-size: 1rem;
-            margin-bottom: 0.4rem;
-        }
-
-        .input-group-cyber {
-            position: relative;
-        }
-
-        .input-group-cyber i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6b7280;
-            transition: color 0.3s ease;
-        }
-
-        .form-control-cyber {
-            background-color: var(--input-bg);
-            border: 1px solid var(--border-color);
-            color: #fff;
-            padding: 0.75rem 1rem 0.75rem 2.7rem;
-            border-radius: 8px;
-            font-size: 1.05rem;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .form-control-cyber:focus {
-            background-color: #22222b;
-            border-color: var(--red-primary);
-            box-shadow: 0 0 12px rgba(255, 30, 39, 0.25);
-            outline: none;
-            color: #fff;
-        }
-
-        .form-control-cyber:focus + i,
-        .input-group-cyber:focus-within i {
-            color: var(--red-primary);
-        }
-
-        .remember-cyber {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #9ca3af;
-            font-size: 0.98rem;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .remember-cyber input[type="checkbox"] {
-            accent-color: var(--red-primary);
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .btn-cyber-login {
-            background: linear-gradient(90deg, var(--red-dark), var(--red-primary));
-            border: none;
-            color: #fff;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: 2px;
-            padding: 0.85rem;
-            border-radius: 8px;
-            width: 100%;
-            margin-top: 0.5rem;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-        }
-
-        .btn-cyber-login:hover {
-            background: linear-gradient(90deg, var(--red-primary), #ff474e);
-            box-shadow: 0 0 20px var(--red-glow);
-            transform: translateY(-2px);
-        }
-
-        .register-link {
-            color: #9ca3af;
-            font-size: 0.98rem;
-            text-decoration: none;
-            transition: color 0.3s ease;
-        }
-
-        .register-link span {
-            color: var(--red-primary);
-            font-weight: 700;
-            text-decoration: underline;
-        }
-
-        .register-link:hover span {
-            color: #ff5259;
-            text-shadow: 0 0 8px var(--red-glow);
-        }
-
-        .alert-cyber {
-            background-color: rgba(255, 30, 39, 0.15);
-            border: 1px solid var(--red-primary);
-            color: #ff8085;
-            font-size: 0.95rem;
-            padding: 0.65rem 1rem;
-            border-radius: 8px;
-            margin-bottom: 1.2rem;
-            text-align: center;
-        }
-
-        .alert-cyber-success {
-            background-color: rgba(16, 185, 129, 0.15);
-            border: 1px solid #10b981;
-            color: #6ee7b7;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Montserrat:ital,wght@0,700;0,900;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/p3r-theme.css">
 </head>
-<body>
+<body class="p3r-body">
 
-    <div class="login-container">
-        <div class="login-card">
-            <div class="brand-header">
-                <div class="brand-icon">
-                    <i class="fa-solid fa-fire-flame-curved"></i>
-                </div>
-                <h1 class="brand-title">RED<span>ZONE</span></h1>
-                <div class="brand-subtitle">Cyber Gaming System</div>
+    <!-- Nền Video Makoto (P3R) - Thêm ?v=1 và ?v=2 để Chrome không khóa cache làm đứng video 2 -->
+    <div class="p3r-bg-layer">
+        <video id="p3rBgA" class="p3r-bg-video" autoplay muted playsinline preload="auto" style="z-index: 2; opacity: 1;">
+            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=1" type="video/mp4">
+        </video>
+        <video id="p3rBgB" class="p3r-bg-video" muted playsinline preload="auto" style="z-index: 1; opacity: 0;">
+            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=2" type="video/mp4">
+        </video>
+        <div class="p3r-video-vignette" style="z-index: 3;"></div>
+    </div>
+
+    <!-- HUD ngày giờ & mặt trăng góc trên phải kiểu P3R -->
+    <div class="p3r-hud-top">
+        <div>
+            <div class="p3r-hud-date" id="p3rDate">--/--</div>
+            <div class="p3r-hud-phase" id="p3rPhase">DARK HOUR</div>
+        </div>
+        <div class="p3r-moon" title="Dark Hour"></div>
+    </div>
+
+    <!-- Khung Đăng nhập căn gọn bên phải để lộ trọn Makoto bên trái -->
+    <main class="p3r-login-wrapper p3r-video-mode">
+        <section class="p3r-login-card">
+            <div class="p3r-card-header">
+                <div class="p3r-card-kicker"><i class="fa-solid fa-terminal me-1"></i> S.E.E.S // CYBER PORTAL</div>
+                <h1 class="p3r-brand-inline">RED<span>ZONE</span> SYSTEM</h1>
+                <div style="color: var(--p3-muted); font-size: 0.92rem;">Đăng nhập để kết nối trạm máy của bạn</div>
             </div>
 
-            <!-- Thông báo lỗi / thành công tự động bắt từ URL -->
+            <!-- Thông báo lỗi / thành công -->
             <c:if test="${param.error == 'invalid'}">
-                <div class="alert-cyber">
+                <div class="p3r-alert">
                     <i class="fa-solid fa-triangle-exclamation me-1"></i> Sai tên đăng nhập, mật khẩu hoặc tài khoản bị khóa!
                 </div>
             </c:if>
             <c:if test="${param.error == 'unauthorized'}">
-                <div class="alert-cyber">
+                <div class="p3r-alert">
                     <i class="fa-solid fa-ban me-1"></i> Bạn không có quyền truy cập khu vực này!
                 </div>
             </c:if>
             <c:if test="${param.error == 'login_required'}">
-                <div class="alert-cyber">
+                <div class="p3r-alert">
                     <i class="fa-solid fa-shield-halved me-1"></i> Vui lòng đăng nhập để tiếp tục!
                 </div>
             </c:if>
             <c:if test="${param.success == 'registered'}">
-                <div class="alert-cyber alert-cyber-success">
+                <div class="p3r-alert p3r-alert-success">
                     <i class="fa-solid fa-circle-check me-1"></i> Đăng ký thành công! Vui lòng chờ Admin duyệt.
                 </div>
             </c:if>
 
             <form action="${pageContext.request.contextPath}/login" method="post">
                 <div class="mb-3">
-                    <label class="form-label">Tên đăng nhập</label>
-                    <div class="input-group-cyber">
-                        <input type="text" name="username" value="${cookie.c_user.value}" class="form-control-cyber" placeholder="Nhập tài khoản..." required autocomplete="off">
+                    <label class="p3r-label">Tên đăng nhập</label>
+                    <div class="p3r-input-wrap">
+                        <input type="text" name="username" value="${cookie.c_user.value}"
+                               class="p3r-input" placeholder="Nhập tài khoản..." required autocomplete="off">
                         <i class="fa-solid fa-user"></i>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label class="form-label">Mật khẩu</label>
-                    <div class="input-group-cyber">
-                        <input type="password" name="password" class="form-control-cyber" placeholder="Nhập mật khẩu..." required>
+                    <label class="p3r-label">Mật khẩu</label>
+                    <div class="p3r-input-wrap">
+                        <input type="password" name="password"
+                               class="p3r-input" placeholder="Nhập mật khẩu..." required>
                         <i class="fa-solid fa-lock"></i>
                     </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="remember-cyber">
+                    <label class="p3r-remember">
                         <input type="checkbox" name="remember" ${cookie.c_remember.value == 'true' ? 'checked' : ''}>
                         Ghi nhớ tài khoản đăng nhập
                     </label>
                 </div>
 
-                <button type="submit" class="btn btn-cyber-login">
-                    Đăng Nhập <i class="fa-solid fa-right-to-bracket ms-1"></i>
+                <button type="submit" class="p3r-btn">
+                    Kết Nối Hệ Thống <i class="fa-solid fa-angles-right ms-1"></i>
                 </button>
 
                 <div class="text-center mt-4">
-                    <a href="register.jsp" class="register-link">
-                        Chưa có tài khoản? <span>Đăng ký ngay</span>
+                    <a href="${pageContext.request.contextPath}/register.jsp" class="p3r-link">
+                        Chưa có tài khoản? <span>Đăng ký hội viên</span>
                     </a>
                 </div>
             </form>
-        </div>
-    </div>
+        </section>
+    </main>
+
+    <script>
+        // 1. Tự cập nhật HUD ngày giờ P3R
+        (function updateP3RHud() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const h = now.getHours();
+
+            document.getElementById('p3rDate').textContent = m + '/' + d + ' ' + days[now.getDay()];
+
+            let phase = 'EVENING';
+            if (h >= 0 && h < 5) phase = 'DARK HOUR';
+            else if (h >= 5 && h < 12) phase = 'MORNING';
+            else if (h >= 12 && h < 18) phase = 'AFTERNOON';
+            document.getElementById('p3rPhase').textContent = phase;
+        })();
+
+        // 2. Crossfade loop liên tục, có fallback chống đứng hình tuyệt đối
+        const vidA = document.getElementById('p3rBgA');
+        const vidB = document.getElementById('p3rBgB');
+
+        if (vidA && vidB) {
+            const LOOP_START = 2.0;   // Sau đoạn lóe trắng & tung nước
+            const TRIGGER_AT = 4.9;   // Bắt đầu hòa tan trước khi kết thúc clip (~6.03s)
+            const FADE_MS = 900;
+
+            let active = vidA;
+            let standby = vidB;
+            let swapping = false;
+
+            function seekSafe(video, time) {
+                try {
+                    if (video.readyState >= 1) {
+                        video.currentTime = time;
+                    }
+                } catch (e) {}
+            }
+
+            // Nạp sẵn video 2 ngay khi tải xong metadata
+            vidB.addEventListener('loadedmetadata', function () {
+                seekSafe(vidB, LOOP_START);
+            }, { once: true });
+            vidB.load();
+
+            function doCrossfade() {
+                if (swapping) return;
+
+                // Nếu video dự phòng chưa tải kịp thì tua thẳng video đang chạy, không cho đứng hình
+                if (standby.readyState < 2) {
+                    seekSafe(active, LOOP_START);
+                    active.play().catch(function () {});
+                    return;
+                }
+
+                swapping = true;
+                const oldVid = active;
+                const newVid = standby;
+
+                oldVid.style.transition = 'none';
+                oldVid.style.zIndex = '1';
+                oldVid.style.opacity = '1';
+
+                newVid.style.transition = 'none';
+                newVid.style.zIndex = '2';
+                newVid.style.opacity = '0';
+                seekSafe(newVid, LOOP_START);
+
+                const playPromise = newVid.play();
+                const startFade = function () {
+                    // Ép trình duyệt cập nhật trạng thái opacity=0 trước khi chạy transition
+                    void newVid.offsetWidth;
+                    newVid.style.transition = 'opacity ' + FADE_MS + 'ms ease-in-out';
+                    newVid.style.opacity = '1';
+
+                    active = newVid;
+                    standby = oldVid;
+
+                    setTimeout(function () {
+                        standby.pause();
+                        standby.style.transition = 'none';
+                        standby.style.opacity = '0';
+                        standby.style.zIndex = '1';
+                        seekSafe(standby, LOOP_START);
+                        swapping = false;
+                    }, FADE_MS + 80);
+                };
+
+                if (playPromise && typeof playPromise.then === 'function') {
+                    playPromise.then(startFade).catch(function () {
+                        swapping = false;
+                        seekSafe(oldVid, LOOP_START);
+                        oldVid.play().catch(function () {});
+                    });
+                } else {
+                    startFade();
+                }
+            }
+
+            function watchLoop() {
+                if (!swapping && !active.paused && active.currentTime >= TRIGGER_AT) {
+                    doCrossfade();
+                }
+                requestAnimationFrame(watchLoop);
+            }
+            requestAnimationFrame(watchLoop);
+
+            // Bảo hiểm nếu người dùng chuyển tab làm video chạy lố qua 6s
+            [vidA, vidB].forEach(function (v) {
+                v.addEventListener('ended', function () {
+                    if (v === active) {
+                        swapping = false;
+                        seekSafe(v, LOOP_START);
+                        v.play().catch(function () {});
+                    }
+                });
+            });
+        }
+    </script>
 
 </body>
 </html>

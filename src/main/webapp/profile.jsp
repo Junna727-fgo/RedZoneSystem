@@ -28,126 +28,678 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>REDZONE GAMING - Client Desktop</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Montserrat:ital,wght@0,700;0,900;1,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/css/p3r-theme.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-        body { background-color: #0b0e14; color: #e2e8f0; display: flex; height: 100vh; overflow: hidden; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* KHU VỰC TRÁI: MÀN HÌNH DESKTOP TRỐNG */
+        body.p3r-client-body {
+            font-family: 'Chakra Petch', sans-serif;
+            background: radial-gradient(circle at 22% 24%, #0e3888 0%, #061430 50%, #020814 100%);
+            color: var(--p3-white);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Thanh cuộn đồng bộ Cyan */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(3, 10, 24, 0.85); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.45); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--p3-cyan); }
+
+        /* ================= KHU VỰC TRÁI: CLIENT DESKTOP ================= */
         .desktop-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: radial-gradient(circle at center, #151b28 0%, #0b0e14 100%);
             position: relative;
+            overflow: hidden;
+            z-index: 2;
+            padding: 30px;
         }
-        .desktop-logo { text-align: center; user-select: none; }
-        .desktop-logo h1 { font-size: 56px; font-weight: 900; color: #ef4444; letter-spacing: 3px; text-shadow: 0 10px 30px rgba(239,68,68,0.3); }
-        .desktop-logo h1 span { color: #fff; }
-        .desktop-logo p { font-size: 18px; color: #64748b; margin-top: 10px; font-weight: 500; letter-spacing: 1px; }
 
-        /* ALERT THÔNG BÁO HIỂN THỊ TRÊN DESKTOP */
-        .alerts-container { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 80%; max-width: 600px; z-index: 10; }
-        .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; font-weight: 600; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-        .alert-success { background: rgba(16, 185, 129, 0.9); border: 1px solid #10b981; color: #fff; }
-        .alert-error { background: rgba(239, 68, 68, 0.9); border: 1px solid #ef4444; color: #fff; }
+        .desktop-hud-left {
+            position: absolute;
+            top: 24px;
+            left: 28px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 5;
+        }
 
-        /* KHU VỰC PHẢI: SIDEBAR CLIENT NET */
-        .right-sidebar { width: 340px; background: rgba(17, 22, 34, 0.95); border-left: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; backdrop-filter: blur(10px); z-index: 20; }
-        .user-box { background: linear-gradient(145deg, #182032, #121724); border: 1px solid #263147; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
-        .user-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .user-name { font-size: 17px; font-weight: 700; color: #fff; }
-        .machine-badge { background: #10b981; color: #052e16; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 6px; }
+        .desktop-hud-left .p3r-hud-phase {
+            margin-top: 5px;
+            border-right: none;
+            border-left: 3px solid var(--p3-cyan);
+        }
 
-        .time-stats { display: flex; flex-direction: column; gap: 10px; background: #0b0e14; padding: 12px; border-radius: 8px; border: 1px solid #1e293b; }
-        .stat-row { display: flex; justify-content: space-between; font-size: 13px; }
-        .stat-label { color: #94a3b8; }
-        .stat-val { font-weight: 700; color: #f8fafc; }
-        .stat-val.money { color: #34d399; font-size: 15px; }
-        .stat-val.countdown { color: #facc15; font-size: 16px; font-family: monospace; }
+        .desktop-logo {
+            text-align: center;
+            user-select: none;
+            position: relative;
+            z-index: 4;
+        }
 
-        /* CÁC NÚT CHỨC NĂNG BÊN PHẢI */
-        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-        .func-btn { background: #1a2234; border: 1px solid #2d3748; color: #f8fafc; padding: 14px 8px; border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-        .func-btn:hover { background: #ef4444; border-color: #ef4444; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 12px rgba(239, 68, 68, 0.2); }
-        .func-btn.full-width { grid-column: span 2; flex-direction: row; justify-content: center; background: #1e293b; }
-        .func-btn.btn-game { grid-column: span 2; flex-direction: row; justify-content: center; background: linear-gradient(45deg, #ef4444, #b91c1c); border-color: #ef4444; font-size: 15px; padding: 16px; }
-        .func-btn.btn-game:hover { background: linear-gradient(45deg, #f87171, #ef4444); }
-        .func-btn span.icon { font-size: 20px; }
+        .desktop-kicker {
+            display: inline-block;
+            background: var(--p3-cyan);
+            color: var(--p3-abyss);
+            font-weight: 700;
+            font-size: 12px;
+            letter-spacing: 3px;
+            padding: 4px 18px;
+            text-transform: uppercase;
+            transform: skewX(-14deg);
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.35);
+        }
+        .desktop-kicker span { display: inline-block; transform: skewX(14deg); }
 
-        .logout-btn { width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #f87171; border-radius: 8px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: block; transition: 0.2s; margin-top: 15px;}
-        .logout-btn:hover { background: #ef4444; color: #fff; }
+        .desktop-logo h1 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: clamp(44px, 5.5vw, 72px);
+            line-height: 0.95;
+            letter-spacing: 2px;
+            color: #fff;
+            text-transform: uppercase;
+            text-shadow: 4px 4px 0 rgba(0, 229, 255, 0.25), 0 12px 35px rgba(0, 0, 0, 0.55);
+        }
+        .desktop-logo h1 span { color: var(--p3-cyan); }
 
-        /* MODAL POPUP */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .desktop-welcome {
+            margin-top: 18px;
+            font-size: 18px;
+            color: #cfe4ff;
+            letter-spacing: 1px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(4, 15, 40, 0.72);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 4px solid var(--p3-cyan);
+            padding: 8px 22px;
+            backdrop-filter: blur(8px);
+        }
+        .desktop-welcome strong { color: var(--p3-cyan); }
+
+        .desktop-status-bar {
+            position: absolute;
+            bottom: 22px;
+            left: 28px;
+            display: flex;
+            gap: 18px;
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            color: var(--p3-muted);
+            text-transform: uppercase;
+            z-index: 4;
+        }
+        .desktop-status-bar i { color: var(--p3-cyan); margin-right: 6px; }
+
+        /* ALERT THÔNG BÁO */
+        .alerts-container {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 82%;
+            max-width: 560px;
+            z-index: 30;
+        }
+        .alert {
+            padding: 12px 18px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
+        .alert-success {
+            background: rgba(0, 245, 160, 0.18);
+            border: 1px solid var(--p3-success);
+            border-left: 5px solid var(--p3-success);
+            color: #9effdc;
+        }
+        .alert-error {
+            background: rgba(255, 42, 85, 0.22);
+            border: 1px solid var(--p3-danger);
+            border-left: 5px solid var(--p3-danger);
+            color: #ffb3c1;
+        }
+
+        /* ================= KHU VỰC PHẢI: SIDEBAR P3R COMMAND MENU ================= */
+        .right-sidebar {
+            width: 365px;
+            background: linear-gradient(180deg, rgba(6, 20, 52, 0.96) 0%, rgba(3, 10, 26, 0.98) 100%);
+            border-left: 3px solid var(--p3-cyan);
+            box-shadow: -12px 0 40px rgba(0, 229, 255, 0.14);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(14px);
+            z-index: 20;
+            overflow-y: auto;
+        }
+
+        /* KHUNG THÔNG TIN HỘI VIÊN */
+        .user-box {
+            background: linear-gradient(155deg, rgba(13, 50, 125, 0.55), rgba(4, 14, 36, 0.92));
+            border: 1px solid rgba(0, 229, 255, 0.32);
+            border-top: 3px solid var(--p3-cyan);
+            padding: 16px;
+            margin-bottom: 18px;
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 14px 100%, 0 calc(100% - 14px));
+            box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .user-role-tag {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--p3-cyan);
+            text-transform: uppercase;
+        }
+        .user-name {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 19px;
+            font-weight: 900;
+            font-style: italic;
+            color: #fff;
+            margin-top: 2px;
+        }
+        .machine-badge {
+            background: var(--p3-success);
+            color: #021a12;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+            font-style: italic;
+            padding: 4px 12px;
+            letter-spacing: 1px;
+            clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+            box-shadow: 0 0 14px rgba(0, 245, 160, 0.45);
+        }
+
+        .time-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+            background: rgba(2, 9, 24, 0.85);
+            padding: 12px 14px;
+            border: 1px solid rgba(143, 180, 223, 0.18);
+            border-left: 3px solid var(--p3-blue);
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        .stat-label { color: var(--p3-muted); font-weight: 600; }
+        .stat-val { font-weight: 700; color: #f4f9ff; }
+        .stat-val.money { color: var(--p3-success); font-size: 15px; text-shadow: 0 0 10px rgba(0, 245, 160, 0.3); }
+        .stat-val.countdown {
+            color: var(--p3-cyan);
+            font-size: 17px;
+            font-family: 'Chakra Petch', monospace;
+            letter-spacing: 1px;
+            text-shadow: 0 0 12px rgba(0, 229, 255, 0.45);
+        }
+
+        .section-caption {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            color: var(--p3-cyan);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-caption::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(0, 229, 255, 0.5), transparent);
+        }
+
+        /* LƯỚI NÚT CHỨC NĂNG */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .func-btn {
+            background: rgba(9, 27, 68, 0.78);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            border-left: 3px solid var(--p3-cyan);
+            color: var(--p3-white);
+            padding: 13px 10px;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+            transition: all 0.2s ease;
+        }
+        .func-btn span.icon { font-size: 19px; color: var(--p3-cyan); transition: color 0.2s ease; }
+
+        .func-btn:hover {
+            background: linear-gradient(95deg, #ffffff 0%, #6ef4ff 100%);
+            border-color: #fff;
+            color: var(--p3-abyss);
+            transform: translateX(4px);
+            box-shadow: 0 0 22px rgba(0, 229, 255, 0.5);
+        }
+        .func-btn:hover span.icon { color: var(--p3-abyss); }
+
+        .func-btn.btn-game {
+            grid-column: span 2;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            background: linear-gradient(95deg, #00d2ff 0%, #1858ff 100%);
+            border: none;
+            color: #020a18;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 16px;
+            letter-spacing: 2px;
+            padding: 15px;
+            clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+            box-shadow: 0 6px 24px rgba(0, 229, 255, 0.35);
+        }
+        .func-btn.btn-game span.icon { color: #020a18; font-size: 20px; }
+        .func-btn.btn-game:hover {
+            background: linear-gradient(95deg, #ffffff 0%, #52f2ff 100%);
+            box-shadow: 0 0 28px rgba(0, 229, 255, 0.7);
+        }
+
+        .func-btn.full-width {
+            grid-column: span 2;
+            flex-direction: row;
+            justify-content: center;
+            gap: 10px;
+            padding: 13px;
+            background: rgba(13, 50, 125, 0.52);
+        }
+
+        .logout-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 16px;
+            background: rgba(255, 42, 85, 0.14);
+            border: 1px solid var(--p3-danger);
+            color: #ff8ca3;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-style: italic;
+            font-size: 13px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background: var(--p3-danger);
+            color: #fff;
+            box-shadow: 0 0 22px rgba(255, 42, 85, 0.55);
+            transform: translateX(3px);
+        }
+
+        /* ================= MODAL POPUP P3R ================= */
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 8, 22, 0.78);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(7px);
+            padding: 16px;
+        }
         .modal.active { display: flex; }
-        .modal-content { background: #151b28; border: 1px solid #2d3748; border-radius: 14px; width: 520px; max-width: 95%; max-height: 88vh; overflow-y: auto; padding: 24px; position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-        .modal-content.large-modal { width: 850px; } /* Khung rộng hơn cho Menu Game */
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; gap: 15px; }
-        .modal-header h3 { font-size: 18px; color: #fff; white-space: nowrap; }
-        .close-btn { background: none; border: none; color: #94a3b8; font-size: 26px; cursor: pointer; line-height: 1; }
-        .close-btn:hover { color: #ef4444; }
 
-        /* CSS CHO MODAL DANH SÁCH GAME */
-        .search-game { flex: 1; background: #0b0e14; border: 1px solid #2d3748; color: #fff; padding: 10px 16px; border-radius: 8px; outline: none; }
-        .search-game:focus { border-color: #ef4444; }
-        .game-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 10px; }
-        .game-card { background: #0b0e14; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; transition: 0.2s; cursor: pointer; position: relative; }
-        .game-card:hover { transform: translateY(-4px); border-color: #ef4444; box-shadow: 0 8px 15px rgba(239, 68, 68, 0.25); }
-        .game-card img { width: 100%; height: 130px; object-fit: cover; display: block; }
-        .game-tag { position: absolute; top: 8px; right: 8px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 3px 6px; border-radius: 4px; }
-        .game-info { padding: 10px; }
-        .game-title { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 2px; }
-        .game-genre { font-size: 11px; color: #94a3b8; }
+        .modal-content {
+            background: linear-gradient(165deg, rgba(7, 25, 61, 0.97) 0%, rgba(3, 10, 26, 0.98) 100%);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            border-top: 4px solid var(--p3-cyan);
+            width: 540px;
+            max-width: 100%;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 24px 26px 28px;
+            position: relative;
+            clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 16px 100%, 0 calc(100% - 16px));
+            box-shadow: 0 20px 55px rgba(0, 0, 0, 0.75), 0 0 32px rgba(0, 229, 255, 0.16);
+        }
+        .modal-content.large-modal { width: 880px; }
 
-        /* CSS FORM / LỊCH SỬ DÙNG TRUNG CHUNG */
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+            padding-bottom: 12px;
+            gap: 15px;
+        }
+        .modal-header h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 18px;
+            color: #fff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .modal-header h3 i { color: var(--p3-cyan); margin-right: 8px; }
+
+        .close-btn {
+            background: rgba(0, 229, 255, 0.12);
+            border: 1px solid rgba(0, 229, 255, 0.35);
+            color: var(--p3-cyan);
+            width: 34px;
+            height: 34px;
+            font-size: 22px;
+            cursor: pointer;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .close-btn:hover {
+            background: var(--p3-danger);
+            border-color: var(--p3-danger);
+            color: #fff;
+        }
+
+        /* KHO GAME */
+        .search-game {
+            flex: 1;
+            background: rgba(2, 9, 24, 0.92);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            border-left: 3px solid var(--p3-cyan);
+            color: #fff;
+            padding: 9px 14px;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+        .search-game:focus {
+            border-color: var(--p3-cyan);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.28);
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 10px;
+        }
+        .game-card {
+            background: rgba(3, 12, 32, 0.92);
+            border: 1px solid rgba(0, 229, 255, 0.22);
+            overflow: hidden;
+            transition: all 0.22s ease;
+            cursor: pointer;
+            position: relative;
+            clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+        }
+        .game-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--p3-cyan);
+            box-shadow: 0 10px 24px rgba(0, 229, 255, 0.28);
+        }
+        .game-card img { width: 100%; height: 132px; object-fit: cover; display: block; }
+        .game-tag {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--p3-cyan);
+            color: var(--p3-abyss);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            text-transform: uppercase;
+            clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 100%);
+        }
+        .game-info { padding: 11px 12px; }
+        .game-title { font-weight: 700; font-size: 14px; color: #fff; margin-bottom: 3px; }
+        .game-genre { font-size: 12px; color: var(--p3-muted); }
+
+        /* FORM & LỊCH SỬ TRONG MODAL */
         .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 13px; color: #94a3b8; margin-bottom: 6px; }
-        .form-group input, .form-group select { width: 100%; padding: 10px 12px; background: #0b0e14; border: 1px solid #2d3748; border-radius: 8px; color: #fff; outline: none; }
-        .submit-btn { width: 100%; padding: 11px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 6px; }
-        .submit-btn:hover { background: #dc2626; }
-        .history-list { margin-top: 16px; border-top: 1px solid #1e293b; padding-top: 12px; font-size: 13px; }
-        .history-item { background: #0b0e14; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid #ef4444; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #cfe4ff;
+            margin-bottom: 6px;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px 13px;
+            background: rgba(2, 10, 26, 0.92);
+            border: 1px solid rgba(143, 180, 223, 0.28);
+            border-left: 3px solid rgba(0, 229, 255, 0.5);
+            color: #fff;
+            font-family: 'Chakra Petch', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--p3-cyan);
+            background: rgba(7, 25, 61, 0.95);
+            box-shadow: 0 0 14px rgba(0, 229, 255, 0.25);
+        }
+        .form-group select option { background: #061430; color: #fff; }
+
+        .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(95deg, #00c4ff 0%, #1a66ff 100%);
+            color: #020a18;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 6px;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            transition: all 0.2s ease;
+        }
+        .submit-btn:hover {
+            background: linear-gradient(95deg, #ffffff 0%, #52f2ff 100%);
+            box-shadow: 0 0 22px rgba(0, 229, 255, 0.6);
+            transform: translateX(3px);
+        }
+
+        .history-list {
+            margin-top: 18px;
+            border-top: 1px solid rgba(0, 229, 255, 0.22);
+            padding-top: 12px;
+            font-size: 13px;
+        }
+        .history-list strong {
+            display: block;
+            color: var(--p3-cyan);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+        .history-item {
+            background: rgba(2, 10, 26, 0.85);
+            padding: 9px 12px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(143, 180, 223, 0.14);
+            border-left: 3px solid var(--p3-cyan);
+            color: #e4f0ff;
+        }
 
         /* CHAT BOX */
-        .chat-box { background: #0b0e14; border: 1px solid #1e293b; border-radius: 8px; height: 240px; overflow-y: auto; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .chat-msg { background: #1a2234; padding: 8px 12px; border-radius: 8px; font-size: 13px; }
-        .chat-msg .sender { font-weight: 700; color: #ef4444; font-size: 12px; margin-bottom: 3px; }
-        .chat-msg .time { float: right; color: #64748b; font-weight: 400; font-size: 11px; }
+        .chat-box {
+            background: rgba(2, 9, 24, 0.9);
+            border: 1px solid rgba(0, 229, 255, 0.25);
+            height: 250px;
+            overflow-y: auto;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-msg {
+            background: rgba(13, 50, 125, 0.42);
+            border-left: 3px solid var(--p3-cyan);
+            padding: 9px 12px;
+            font-size: 13px;
+        }
+        .chat-msg .sender {
+            font-weight: 700;
+            color: var(--p3-cyan);
+            font-size: 12px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .chat-msg .time { float: right; color: var(--p3-muted); font-weight: 500; font-size: 11px; }
         .chat-input-row { display: flex; gap: 8px; }
-        .chat-input-row input { flex: 1; padding: 10px; background: #0b0e14; border: 1px solid #2d3748; border-radius: 8px; color: #fff; }
-        .chat-input-row button { padding: 10px 18px; background: #ef4444; color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .chat-input-row input {
+            flex: 1;
+            padding: 10px 12px;
+            background: rgba(2, 10, 26, 0.92);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            color: #fff;
+            font-family: 'Chakra Petch', sans-serif;
+            outline: none;
+        }
+        .chat-input-row input:focus { border-color: var(--p3-cyan); }
+        .chat-input-row button {
+            padding: 10px 22px;
+            background: linear-gradient(95deg, #00c4ff, #1a66ff);
+            color: #020a18;
+            border: none;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            text-transform: uppercase;
+            cursor: pointer;
+            clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+        }
+        .chat-input-row button:hover {
+            background: #fff;
+            box-shadow: 0 0 16px rgba(0, 229, 255, 0.6);
+        }
+
+        @media (max-width: 900px) {
+            body.p3r-client-body { flex-direction: column; height: auto; overflow-y: auto; }
+            .desktop-area { min-height: 45vh; padding-top: 90px; }
+            .right-sidebar { width: 100%; border-left: none; border-top: 3px solid var(--p3-cyan); }
+            .desktop-status-bar { display: none; }
+        }
     </style>
 </head>
-<body>
+<body class="p3r-client-body">
 
-    <!-- BÊN TRÁI: MÀN HÌNH DESKTOP (Trống, sạch sẽ) -->
+    <!-- Lớp nền P3R Dark Hour (dùng chung animation từ p3r-theme.css) -->
+    <div class="p3r-bg-layer">
+        <div class="p3r-caustics"></div>
+        <div class="p3r-shard s1"></div>
+        <div class="p3r-shard s2"></div>
+        <div class="p3r-shard s3"></div>
+        <div class="p3r-watermark">DARK HOUR<br>REDZONE</div>
+    </div>
+
+    <!-- BÊN TRÁI: MÀN HÌNH DESKTOP CLIENT -->
     <div class="desktop-area">
+        <!-- HUD Ngày giờ kiểu P3R -->
+        <div class="desktop-hud-left">
+            <div class="p3r-moon" title="Dark Hour"></div>
+            <div>
+                <div class="p3r-hud-date" id="p3rDate">--/--</div>
+                <div class="p3r-hud-phase" id="p3rPhase">DARK HOUR</div>
+            </div>
+        </div>
+
+        <!-- Thông báo hệ thống -->
         <div class="alerts-container">
             <% if (message != null && !message.isEmpty()) { %>
-                <div class="alert alert-success"><%= message %></div>
+                <div class="alert alert-success"><i class="fa-solid fa-circle-check"></i> <%= message %></div>
             <% } %>
             <% if (error != null && !error.isEmpty()) { %>
-                <div class="alert alert-error"><%= error %></div>
+                <div class="alert alert-error"><i class="fa-solid fa-triangle-exclamation"></i> <%= error %></div>
             <% } %>
         </div>
 
         <div class="desktop-logo">
-            <h1>REDZONE <span>GAMING</span></h1>
-            <p>Xin chào, <%= currentUser.getFullName() %>!</p>
+            <div class="desktop-kicker"><span>S.E.E.S // CLIENT TERMINAL ACTIVE</span></div>
+            <h1>RED<span>ZONE</span> GAMING</h1>
+            <div class="desktop-welcome">
+                <i class="fa-solid fa-user-astronaut"></i>
+                Xin chào, <strong><%= currentUser.getFullName() %></strong>!
+            </div>
+        </div>
+
+        <div class="desktop-status-bar">
+            <span><i class="fa-solid fa-signal"></i> PING: 4ms</span>
+            <span><i class="fa-solid fa-shield-halved"></i> SESSION SECURED</span>
+            <span><i class="fa-solid fa-headset"></i> SUPPORT READY</span>
         </div>
     </div>
 
-    <!-- BÊN PHẢI: Ô THÔNG TIN THỜI GIAN & CÁC NÚT CHỨC NĂNG -->
+    <!-- BÊN PHẢI: Ô THÔNG TIN THỜI GIAN & MENU LỆNH P3R -->
     <div class="right-sidebar">
         <div>
             <!-- KHUNG THÔNG TIN TÀI KHOẢN -->
             <div class="user-box">
                 <div class="user-header">
                     <div>
-                        <div style="font-size: 11px; color: #94a3b8;">HỘI VIÊN TRỰC TUYẾN</div>
+                        <div class="user-role-tag">HỘI VIÊN TRỰC TUYẾN</div>
                         <div class="user-name"><%= currentUser.getUsername() %></div>
                     </div>
                     <span class="machine-badge">ONLINE</span>
@@ -155,64 +707,65 @@
 
                 <div class="time-stats">
                     <div class="stat-row">
-                        <span class="stat-label">Số dư ví:</span>
+                        <span class="stat-label"><i class="fa-solid fa-wallet"></i> Số dư ví:</span>
                         <span class="stat-val money"><%= df.format(currentUser.getBalance()) %> VNĐ</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Thời gian quy đổi:</span>
+                        <span class="stat-label"><i class="fa-regular fa-clock"></i> Quy đổi giờ:</span>
                         <span class="stat-val" id="totalHoursText">0h 00m</span>
                     </div>
                     <div class="stat-row">
-                        <span class="stat-label">Đang chơi:</span>
+                        <span class="stat-label"><i class="fa-solid fa-hourglass-half"></i> Còn lại:</span>
                         <span class="stat-val countdown" id="countdownTimer">00:00:00</span>
                     </div>
                 </div>
             </div>
 
-            <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 8px;">BẢNG ĐIỀU KHIỂN (CLIENT)</div>
+            <div class="section-caption">BẢNG ĐIỀU KHIỂN (CLIENT)</div>
 
             <!-- DANH SÁCH NÚT BẤM -->
             <div class="action-grid">
-                <!-- Nút lớn hiển thị Menu Game -->
                 <button class="func-btn btn-game" onclick="openModal('modalGameMenu')">
-                    <span class="icon">🎮</span>
+                    <span class="icon"><i class="fa-solid fa-gamepad"></i></span>
                     <span>MENU GAME</span>
                 </button>
 
                 <button class="func-btn" onclick="openModal('modalTopUp')">
-                    <span class="icon">💳</span>
+                    <span class="icon"><i class="fa-solid fa-credit-card"></i></span>
                     <span>Nạp Tiền</span>
                 </button>
                 <button class="func-btn" onclick="openModal('modalService')">
-                    <span class="icon">🍜</span>
+                    <span class="icon"><i class="fa-solid fa-utensils"></i></span>
                     <span>Gọi Món</span>
                 </button>
                 <button class="func-btn" onclick="openModal('modalGear')">
-                    <span class="icon">🖱️</span>
+                    <span class="icon"><i class="fa-solid fa-computer-mouse"></i></span>
                     <span>Thuê Gear</span>
                 </button>
                 <button class="func-btn" onclick="openModal('modalProfile')">
-                    <span class="icon">👤</span>
+                    <span class="icon"><i class="fa-solid fa-id-card"></i></span>
                     <span>Hồ Sơ</span>
                 </button>
                 <button class="func-btn full-width" onclick="openModal('modalChat')">
-                    <span class="icon">💬</span>
+                    <span class="icon"><i class="fa-solid fa-comments"></i></span>
                     <span>Nhắn Tin Trực Tiếp Quầy</span>
                 </button>
             </div>
         </div>
 
-        <a href="<%= request.getContextPath() %>/logout" class="logout-btn">⏻ TẮT MÁY (ĐĂNG XUẤT)</a>
+        <a href="<%= request.getContextPath() %>/logout" class="logout-btn">
+            <i class="fa-solid fa-power-off"></i> TẮT MÁY (ĐĂNG XUẤT)
+        </a>
     </div>
 
     <!-- ================= CÁC MODAL POPUP CỦA HỆ THỐNG ================= -->
 
-    <!-- 0. MODAL DANH SÁCH GAME (MỚI) -->
+    <!-- 0. MODAL DANH SÁCH GAME -->
     <div id="modalGameMenu" class="modal">
         <div class="modal-content large-modal">
             <div class="modal-header">
-                <h3>🎮 KHO GAME REDZONE</h3>
-                <input type="text" id="gameSearch" class="search-game" placeholder="🔍 Tìm kiếm tựa game..." onkeyup="filterGames()">
+                <h3><i class="fa-solid fa-gamepad"></i> KHO GAME REDZONE</h3>
+                <input type="text" id="gameSearch" class="search-game" placeholder="Tìm kiếm tựa game..." onkeyup="filterGames()">
                 <button class="close-btn" onclick="closeModal('modalGameMenu')">&times;</button>
             </div>
 
@@ -237,13 +790,13 @@
     <div id="modalTopUp" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>💳 Nạp Tiền Vào Tài Khoản</h3>
+                <h3><i class="fa-solid fa-credit-card"></i> Nạp Tiền Tài Khoản</h3>
                 <button class="close-btn" onclick="closeModal('modalTopUp')">&times;</button>
             </div>
             <form action="<%= request.getContextPath() %>/member" method="post">
                 <input type="hidden" name="action" value="topUp">
                 <div class="form-group">
-                    <label>Số tiền muốn nạp (VNĐ) — Bảng giá: 10.000đ = 1 giờ chơi</label>
+                    <label>Số tiền muốn nạp (VNĐ) — 10.000đ = 1 giờ chơi</label>
                     <input type="number" name="amount" min="10000" step="5000" value="20000" required>
                 </div>
                 <div class="form-group">
@@ -262,7 +815,7 @@
     <div id="modalService" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🍜 Dịch Vụ Ăn Uống Tại Bàn</h3>
+                <h3><i class="fa-solid fa-utensils"></i> Dịch Vụ Ăn Uống Tại Bàn</h3>
                 <button class="close-btn" onclick="closeModal('modalService')">&times;</button>
             </div>
             <form action="<%= request.getContextPath() %>/member" method="post">
@@ -272,7 +825,7 @@
                     <input type="text" name="machineCode" value="VIP-01" required>
                 </div>
                 <div class="form-group">
-                    <label>Menu (Sẽ được trừ trực tiếp vào số dư ví)</label>
+                    <label>Menu (Trừ trực tiếp vào số dư ví)</label>
                     <select name="itemId">
                         <% if (menuItems != null) {
                             for (MenuItem item : menuItems) { %>
@@ -305,7 +858,7 @@
     <div id="modalGear" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🖱️ Dịch Vụ Mượn & Thuê Gear</h3>
+                <h3><i class="fa-solid fa-computer-mouse"></i> Mượn &amp; Thuê Gear</h3>
                 <button class="close-btn" onclick="closeModal('modalGear')">&times;</button>
             </div>
             <form action="<%= request.getContextPath() %>/member" method="post">
@@ -346,7 +899,7 @@
     <div id="modalProfile" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>👤 Quản Lý Thông Tin Tài Khoản</h3>
+                <h3><i class="fa-solid fa-id-card"></i> Thông Tin Tài Khoản</h3>
                 <button class="close-btn" onclick="closeModal('modalProfile')">&times;</button>
             </div>
             <form action="<%= request.getContextPath() %>/member" method="post">
@@ -372,7 +925,7 @@
     <div id="modalChat" class="modal <%= "modalChat".equals(openModalOnLoad) ? "active" : "" %>">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>💬 Kênh Chat - Quản Trị Viên</h3>
+                <h3><i class="fa-solid fa-comments"></i> Kênh Chat - Quầy Quản Trị</h3>
                 <button class="close-btn" onclick="closeModal('modalChat')">&times;</button>
             </div>
             <div class="chat-box" id="chatBox">
@@ -394,12 +947,29 @@
     </div>
 
     <script>
-        // Mở, đóng các khung popup
+        // 1. HUD ngày giờ P3R
+        (function updateP3RHud() {
+            const now = new Date();
+            const d = String(now.getDate()).padStart(2, '0');
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            const h = now.getHours();
+
+            document.getElementById('p3rDate').textContent = m + '/' + d + ' ' + days[now.getDay()];
+
+            let phase = 'EVENING';
+            if (h >= 0 && h < 5) phase = 'DARK HOUR';
+            else if (h >= 5 && h < 12) phase = 'MORNING';
+            else if (h >= 12 && h < 18) phase = 'AFTERNOON';
+            document.getElementById('p3rPhase').textContent = phase;
+        })();
+
+        // 2. Mở, đóng các khung popup
         function openModal(id) {
             document.getElementById(id).classList.add('active');
             if (id === 'modalChat') {
                 const cb = document.getElementById('chatBox');
-                cb.scrollTop = cb.scrollHeight;
+                if (cb) cb.scrollTop = cb.scrollHeight;
             }
         }
         function closeModal(id) {
@@ -410,28 +980,44 @@
                 e.target.classList.remove('active');
             }
         };
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal.active').forEach(function(m) {
+                    m.classList.remove('active');
+                });
+            }
+        });
 
-        // Tìm kiếm game trong popup Game Menu
+        // Tự cuộn xuống cuối nếu modalChat được mở sẵn sau khi gửi tin
+        (function scrollChatOnLoad() {
+            const chatModal = document.getElementById('modalChat');
+            const cb = document.getElementById('chatBox');
+            if (chatModal && chatModal.classList.contains('active') && cb) {
+                cb.scrollTop = cb.scrollHeight;
+            }
+        })();
+
+        // 3. Tìm kiếm & khởi chạy game
         function filterGames() {
             const key = document.getElementById('gameSearch').value.toLowerCase();
-            document.querySelectorAll('.game-card').forEach(card => {
+            document.querySelectorAll('.game-card').forEach(function(card) {
                 const name = card.getAttribute('data-name');
                 card.style.display = name.includes(key) ? 'block' : 'none';
             });
         }
 
         function launchGame(gameName) {
-            alert("🚀 Đang khởi chạy " + gameName + "...\nĐang kết nối tới máy chủ, vui lòng đợi giây lát.");
+            alert("Đang khởi chạy " + gameName + "...\nĐang kết nối tới máy chủ, vui lòng đợi giây lát.");
             closeModal('modalGameMenu');
         }
 
-        // Tự động ẩn các khung thông báo lỗi/thành công sau 5 giây
-        setTimeout(() => {
+        // 4. Tự ẩn thông báo sau 5 giây
+        setTimeout(function() {
             const alerts = document.querySelector('.alerts-container');
             if (alerts) { alerts.style.display = 'none'; }
         }, 5000);
 
-        // Đồng hồ đếm ngược giờ chơi
+        // 5. Đồng hồ đếm ngược giờ chơi
         let totalMinutes = <%= remainingMinutes %>;
         let totalSeconds = totalMinutes * 60;
 
