@@ -10,21 +10,309 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Montserrat:ital,wght@0,700;0,900;1,800;1,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/p3r-theme.css">
+    <style>
+        /* 1. Tối ưu GPU cho nền video */
+        .p3r-bg-video {
+            filter: none !important;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+        }
+        .p3r-login-wrapper.p3r-video-mode .p3r-login-card {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            background: rgba(4, 15, 40, 0.92) !important;
+        }
+
+        /* 2. Nút con mắt hiện/ẩn mật khẩu */
+        .p3r-input-wrap {
+            position: relative;
+        }
+        .p3r-input.has-eye {
+            padding-right: 44px !important;
+        }
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+        .p3r-eye-btn {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            z-index: 5;
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            color: #8fb4df;
+            cursor: pointer;
+            padding: 0;
+            transition: color 0.18s ease, background 0.18s ease, transform 0.12s ease;
+        }
+        .p3r-eye-btn:hover {
+            color: #00e5ff;
+            background: rgba(0, 229, 255, 0.14);
+        }
+        .p3r-eye-btn:active {
+            transform: translateY(-50%) scale(0.9);
+        }
+        .p3r-eye-btn:focus-visible {
+            outline: 2px solid #00e5ff;
+            outline-offset: 1px;
+        }
+        .p3r-eye-btn i {
+            position: static !important;
+            top: auto !important;
+            left: auto !important;
+            right: auto !important;
+            transform: none !important;
+            font-size: 0.95rem !important;
+            color: inherit !important;
+            pointer-events: none;
+        }
+
+        /* 3. Tối ưu nút chính (.p3r-btn) */
+        .p3r-btn {
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            min-height: 48px;
+            padding: 12px 22px;
+            border: none;
+            background: linear-gradient(100deg, #00e5ff 0%, #0095ff 55%, #1d5bff 100%);
+            color: #020a18;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 900;
+            font-style: italic;
+            font-size: 0.95rem;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+            box-shadow: 0 6px 20px rgba(0, 229, 255, 0.28);
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.16s ease, box-shadow 0.2s ease, filter 0.2s ease;
+        }
+        .p3r-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -120%;
+            width: 65%;
+            height: 100%;
+            background: linear-gradient(105deg, transparent 0%, rgba(255, 255, 255, 0.45) 50%, transparent 100%);
+            transform: skewX(-20deg);
+            pointer-events: none;
+            transition: transform 0.45s ease;
+        }
+        .p3r-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 26px rgba(0, 229, 255, 0.55);
+            filter: brightness(1.08);
+            color: #020a18;
+        }
+        .p3r-btn:hover::before {
+            transform: translateX(380%) skewX(-20deg);
+        }
+        .p3r-btn i {
+            transition: transform 0.2s ease;
+        }
+        .p3r-btn:hover i {
+            transform: translateX(4px);
+        }
+        .p3r-btn:active {
+            transform: translateY(0) scale(0.98);
+            box-shadow: 0 3px 12px rgba(0, 229, 255, 0.35);
+        }
+        .p3r-btn:focus-visible {
+            outline: 2px solid #ffffff;
+            outline-offset: 3px;
+        }
+        .p3r-btn:disabled,
+        .p3r-btn.is-loading {
+            opacity: 0.78;
+            cursor: not-allowed;
+            transform: none;
+            filter: saturate(0.85);
+        }
+
+        /* 4. Link chuyển trang */
+        .p3r-link {
+            display: inline-block;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            transition: color 0.18s ease, transform 0.16s ease;
+        }
+        .p3r-link span {
+            position: relative;
+            font-weight: 700;
+            color: #00e5ff;
+        }
+        .p3r-link span::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -2px;
+            width: 100%;
+            height: 2px;
+            background: #00e5ff;
+            transform: scaleX(0);
+            transform-origin: right;
+            transition: transform 0.22s ease;
+        }
+        .p3r-link:hover span::after {
+            transform: scaleX(1);
+            transform-origin: left;
+        }
+        .p3r-link:active {
+            transform: scale(0.97);
+        }
+
+        /* 5. Cụm nút HUD nhạc nền BGM */
+        .p3r-bgm-hud {
+            position: fixed;
+            top: 22px;
+            left: 28px;
+            z-index: 20;
+            display: inline-flex;
+            align-items: stretch;
+            min-height: 38px;
+            background: rgba(3, 12, 34, 0.94);
+            border: 1px solid rgba(0, 229, 255, 0.45);
+            border-left: 4px solid #00e5ff;
+            clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+            box-shadow: 0 0 18px rgba(0, 229, 255, 0.22);
+            user-select: none;
+            overflow: hidden;
+        }
+        .p3r-bgm-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: transparent;
+            border: none;
+            color: #f4f9ff;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 800;
+            font-style: italic;
+            font-size: 0.78rem;
+            letter-spacing: 1.1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.18s ease, transform 0.12s ease;
+        }
+        .p3r-bgm-toggle:hover { background: rgba(0, 229, 255, 0.16); }
+        .p3r-bgm-toggle:active { transform: scale(0.97); }
+        .p3r-bgm-bars {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 3px;
+            height: 14px;
+        }
+        .p3r-bgm-bars span {
+            width: 3px;
+            height: 4px;
+            background: #8fb4df;
+            transition: height 0.2s ease;
+        }
+        .p3r-bgm-hud.is-playing .p3r-bgm-bars span {
+            background: #00e5ff;
+            animation: p3rEq 0.9s ease-in-out infinite;
+        }
+        .p3r-bgm-hud.is-playing .p3r-bgm-bars span:nth-child(2) { animation-delay: 0.2s; }
+        .p3r-bgm-hud.is-playing .p3r-bgm-bars span:nth-child(3) { animation-delay: 0.4s; }
+        .p3r-bgm-track {
+            color: #00e5ff;
+            font-family: 'Chakra Petch', sans-serif;
+            font-style: normal;
+            font-weight: 700;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            border-left: 1px solid rgba(143, 180, 223, 0.35);
+            padding-left: 10px;
+            max-width: 185px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .p3r-bgm-controls {
+            display: inline-flex;
+            align-items: center;
+            border-left: 1px solid rgba(0, 229, 255, 0.28);
+            padding-right: 14px;
+        }
+        .p3r-bgm-ctrl {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: #8fb4df;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.16s ease, color 0.16s ease, transform 0.12s ease;
+        }
+        .p3r-bgm-ctrl:hover { color: #020a18; background: #00e5ff; }
+        .p3r-bgm-ctrl:active { transform: scale(0.9); }
+        .p3r-bgm-toggle:focus-visible,
+        .p3r-bgm-ctrl:focus-visible {
+            outline: 2px solid #00e5ff;
+            outline-offset: -2px;
+        }
+        @keyframes p3rEq {
+            0%, 100% { height: 4px; }
+            50% { height: 14px; }
+        }
+        @media (max-width: 576px) {
+            .p3r-bgm-hud { top: 14px; left: 14px; }
+            .p3r-bgm-track { display: none; }
+        }
+    </style>
 </head>
 <body class="p3r-body">
 
-    <!-- Nền Video Makoto (P3R) - Thêm ?v=1 và ?v=2 để Chrome không khóa cache làm đứng video 2 -->
+    <!-- Nền Video Makoto (P3R) -->
     <div class="p3r-bg-layer">
-        <video id="p3rBgA" class="p3r-bg-video" autoplay muted playsinline preload="auto" style="z-index: 2; opacity: 1;">
-            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=1" type="video/mp4">
+        <video class="p3r-bg-video" autoplay loop muted playsinline disablePictureInPicture preload="auto">
+            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=6" type="video/mp4">
         </video>
-        <video id="p3rBgB" class="p3r-bg-video" muted playsinline preload="auto" style="z-index: 1; opacity: 0;">
-            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=2" type="video/mp4">
-        </video>
-        <div class="p3r-video-vignette" style="z-index: 3;"></div>
+        <div class="p3r-video-vignette"></div>
     </div>
 
-    <!-- HUD ngày giờ & mặt trăng góc trên phải kiểu P3R -->
+    <!-- HUD trình phát nhạc nền góc trên trái -->
+    <audio id="p3rBgmAudio" preload="auto"></audio>
+    <div id="p3rBgmHud" class="p3r-bgm-hud">
+        <button type="button" id="p3rBgmToggle" class="p3r-bgm-toggle" title="Bật / Tắt nhạc nền">
+            <span class="p3r-bgm-bars">
+                <span></span><span></span><span></span>
+            </span>
+            <span id="p3rBgmStatus">BGM OFF</span>
+            <span id="p3rBgmTrack" class="p3r-bgm-track">LOADING...</span>
+        </button>
+        <div class="p3r-bgm-controls">
+            <button type="button" id="p3rBgmPrev" class="p3r-bgm-ctrl" title="Bài trước">
+                <i class="fa-solid fa-backward-step"></i>
+            </button>
+            <button type="button" id="p3rBgmNext" class="p3r-bgm-ctrl" title="Bài tiếp theo">
+                <i class="fa-solid fa-forward-step"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- HUD ngày giờ & mặt trăng góc trên phải -->
     <div class="p3r-hud-top">
         <div>
             <div class="p3r-hud-date" id="p3rDate">--/--</div>
@@ -33,7 +321,7 @@
         <div class="p3r-moon" title="Dark Hour"></div>
     </div>
 
-    <!-- Khung Đăng nhập căn gọn bên phải để lộ trọn Makoto bên trái -->
+    <!-- Khung Đăng nhập -->
     <main class="p3r-login-wrapper p3r-video-mode">
         <section class="p3r-login-card">
             <div class="p3r-card-header">
@@ -42,7 +330,6 @@
                 <div style="color: var(--p3-muted); font-size: 0.92rem;">Đăng nhập để kết nối trạm máy của bạn</div>
             </div>
 
-            <!-- Thông báo lỗi / thành công -->
             <c:if test="${param.error == 'invalid'}">
                 <div class="p3r-alert">
                     <i class="fa-solid fa-triangle-exclamation me-1"></i> Sai tên đăng nhập, mật khẩu hoặc tài khoản bị khóa!
@@ -77,9 +364,13 @@
                 <div class="mb-3">
                     <label class="p3r-label">Mật khẩu</label>
                     <div class="p3r-input-wrap">
-                        <input type="password" name="password"
-                               class="p3r-input" placeholder="Nhập mật khẩu..." required>
+                        <input type="password" id="loginPassword" name="password"
+                               class="p3r-input has-eye" placeholder="Nhập mật khẩu..." required>
                         <i class="fa-solid fa-lock"></i>
+                        <button type="button" class="p3r-eye-btn" data-toggle-pass="loginPassword"
+                                title="Hiện mật khẩu" aria-label="Hiện mật khẩu">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
@@ -121,106 +412,152 @@
             document.getElementById('p3rPhase').textContent = phase;
         })();
 
-        // 2. Crossfade loop liên tục, có fallback chống đứng hình tuyệt đối
-        const vidA = document.getElementById('p3rBgA');
-        const vidB = document.getElementById('p3rBgB');
+        // 2. Trình phát nhạc nền P3R (đồng bộ với register.jsp)
+        (function () {
+            const audio = document.getElementById('p3rBgmAudio');
+            const hud = document.getElementById('p3rBgmHud');
+            const toggleBtn = document.getElementById('p3rBgmToggle');
+            const prevBtn = document.getElementById('p3rBgmPrev');
+            const nextBtn = document.getElementById('p3rBgmNext');
+            const statusText = document.getElementById('p3rBgmStatus');
+            const trackText = document.getElementById('p3rBgmTrack');
+            if (!audio || !hud) return;
 
-        if (vidA && vidB) {
-            const LOOP_START = 2.0;   // Sau đoạn lóe trắng & tung nước
-            const TRIGGER_AT = 4.9;   // Bắt đầu hòa tan trước khi kết thúc clip (~6.03s)
-            const FADE_MS = 900;
+            const basePath = '${pageContext.request.contextPath}/assets/media/';
 
-            let active = vidA;
-            let standby = vidB;
-            let swapping = false;
+            const PLAYLIST = [
+                { title: 'Changing Seasons -Reload-', file: 'p3r-1.m4a' },
+                { title: 'Color Your Night', file: 'p3r-2.m4a' },
+                { title: 'Because I Will Protect You -Reload-', file: 'p3r-3.m4a' }
+            ];
 
-            function seekSafe(video, time) {
-                try {
-                    if (video.readyState >= 1) {
-                        video.currentTime = time;
-                    }
-                } catch (e) {}
+            audio.volume = 0.35;
+
+            let currentIndex = parseInt(sessionStorage.getItem('p3r_bgm_index') || '0', 10);
+            if (isNaN(currentIndex) || currentIndex < 0 || currentIndex >= PLAYLIST.length) {
+                currentIndex = 0;
+            }
+            const savedTime = parseFloat(sessionStorage.getItem('p3r_bgm_time') || '0');
+            const isMuted = sessionStorage.getItem('p3r_bgm_muted') === 'true';
+
+            function setUI(playing) {
+                hud.classList.toggle('is-playing', playing);
+                statusText.textContent = playing ? 'BGM ON' : 'BGM OFF';
             }
 
-            // Nạp sẵn video 2 ngay khi tải xong metadata
-            vidB.addEventListener('loadedmetadata', function () {
-                seekSafe(vidB, LOOP_START);
-            }, { once: true });
-            vidB.load();
+            function loadTrack(index, startTime) {
+                currentIndex = (index + PLAYLIST.length) % PLAYLIST.length;
+                const track = PLAYLIST[currentIndex];
+                audio.src = basePath + track.file;
+                trackText.textContent = track.title;
+                trackText.title = track.title;
+                sessionStorage.setItem('p3r_bgm_index', String(currentIndex));
 
-            function doCrossfade() {
-                if (swapping) return;
-
-                // Nếu video dự phòng chưa tải kịp thì tua thẳng video đang chạy, không cho đứng hình
-                if (standby.readyState < 2) {
-                    seekSafe(active, LOOP_START);
-                    active.play().catch(function () {});
-                    return;
+                if (startTime && startTime > 0) {
+                    audio.addEventListener('loadedmetadata', function applyTime() {
+                        if (audio.duration && startTime < audio.duration) {
+                            audio.currentTime = startTime;
+                        }
+                    }, { once: true });
                 }
+            }
 
-                swapping = true;
-                const oldVid = active;
-                const newVid = standby;
-
-                oldVid.style.transition = 'none';
-                oldVid.style.zIndex = '1';
-                oldVid.style.opacity = '1';
-
-                newVid.style.transition = 'none';
-                newVid.style.zIndex = '2';
-                newVid.style.opacity = '0';
-                seekSafe(newVid, LOOP_START);
-
-                const playPromise = newVid.play();
-                const startFade = function () {
-                    // Ép trình duyệt cập nhật trạng thái opacity=0 trước khi chạy transition
-                    void newVid.offsetWidth;
-                    newVid.style.transition = 'opacity ' + FADE_MS + 'ms ease-in-out';
-                    newVid.style.opacity = '1';
-
-                    active = newVid;
-                    standby = oldVid;
-
-                    setTimeout(function () {
-                        standby.pause();
-                        standby.style.transition = 'none';
-                        standby.style.opacity = '0';
-                        standby.style.zIndex = '1';
-                        seekSafe(standby, LOOP_START);
-                        swapping = false;
-                    }, FADE_MS + 80);
-                };
-
-                if (playPromise && typeof playPromise.then === 'function') {
-                    playPromise.then(startFade).catch(function () {
-                        swapping = false;
-                        seekSafe(oldVid, LOOP_START);
-                        oldVid.play().catch(function () {});
+            function playCurrent(allowUnlock) {
+                const p = audio.play();
+                if (p !== undefined) {
+                    p.then(function () {
+                        setUI(true);
+                        sessionStorage.setItem('p3r_bgm_muted', 'false');
+                    }).catch(function () {
+                        setUI(false);
+                        if (allowUnlock) {
+                            statusText.textContent = 'CLICK PLAY';
+                            const unlock = function (e) {
+                                if (e.target.closest('#p3rBgmHud')) return;
+                                if (sessionStorage.getItem('p3r_bgm_muted') !== 'true') {
+                                    audio.play().then(function () { setUI(true); }).catch(function () {});
+                                }
+                                document.removeEventListener('click', unlock);
+                                document.removeEventListener('keydown', unlock);
+                            };
+                            document.addEventListener('click', unlock);
+                            document.addEventListener('keydown', unlock);
+                        }
                     });
+                }
+            }
+
+            function switchTrack(step) {
+                sessionStorage.setItem('p3r_bgm_time', '0');
+                sessionStorage.setItem('p3r_bgm_muted', 'false');
+                loadTrack(currentIndex + step, 0);
+                playCurrent(false);
+            }
+
+            loadTrack(currentIndex, savedTime);
+            if (!isMuted) {
+                playCurrent(true);
+            } else {
+                setUI(false);
+            }
+
+            toggleBtn.addEventListener('click', function () {
+                if (audio.paused) {
+                    sessionStorage.setItem('p3r_bgm_muted', 'false');
+                    playCurrent(false);
                 } else {
-                    startFade();
+                    audio.pause();
+                    sessionStorage.setItem('p3r_bgm_muted', 'true');
+                    setUI(false);
                 }
-            }
-
-            function watchLoop() {
-                if (!swapping && !active.paused && active.currentTime >= TRIGGER_AT) {
-                    doCrossfade();
-                }
-                requestAnimationFrame(watchLoop);
-            }
-            requestAnimationFrame(watchLoop);
-
-            // Bảo hiểm nếu người dùng chuyển tab làm video chạy lố qua 6s
-            [vidA, vidB].forEach(function (v) {
-                v.addEventListener('ended', function () {
-                    if (v === active) {
-                        swapping = false;
-                        seekSafe(v, LOOP_START);
-                        v.play().catch(function () {});
-                    }
-                });
             });
-        }
+
+            prevBtn.addEventListener('click', function () { switchTrack(-1); });
+            nextBtn.addEventListener('click', function () { switchTrack(1); });
+            audio.addEventListener('ended', function () { switchTrack(1); });
+
+            window.addEventListener('beforeunload', function () {
+                sessionStorage.setItem('p3r_bgm_index', String(currentIndex));
+                sessionStorage.setItem('p3r_bgm_time', String(audio.currentTime || 0));
+            });
+        })();
+
+        // 3. Nút con mắt hiện / ẩn mật khẩu
+        document.querySelectorAll('[data-toggle-pass]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const input = document.getElementById(btn.getAttribute('data-toggle-pass'));
+                const icon = btn.querySelector('i');
+                if (!input || !icon) return;
+
+                const isHidden = input.type === 'password';
+                input.type = isHidden ? 'text' : 'password';
+                icon.classList.toggle('fa-eye', !isHidden);
+                icon.classList.toggle('fa-eye-slash', isHidden);
+                btn.title = isHidden ? 'Ẩn mật khẩu' : 'Hiện mật khẩu';
+                btn.setAttribute('aria-label', btn.title);
+            });
+        });
+
+        // 4. Hiệu ứng loading & khóa chống bấm đúp khi gửi form
+        (function () {
+            const form = document.querySelector('form');
+            const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+            if (!form || !submitBtn) return;
+
+            const originalHtml = submitBtn.innerHTML;
+            form.addEventListener('submit', function () {
+                if (submitBtn.disabled) return;
+                submitBtn.disabled = true;
+                submitBtn.classList.add('is-loading');
+                submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Đang Kết Nối...';
+            });
+
+            window.addEventListener('pageshow', function () {
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('is-loading');
+                submitBtn.innerHTML = originalHtml;
+            });
+        })();
     </script>
 
 </body>
