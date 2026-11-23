@@ -20,7 +20,7 @@ public class PhongMayDAO {
                         rs.getInt("MaPhong"),
                         rs.getString("TenPhong"),
                         rs.getDouble("DonGiaCoBan"),
-                        rs.getString("MoTa")
+                        rs.getString("MoTaDichVuKem")
                 ));
             }
         } catch (SQLException e) {
@@ -30,12 +30,12 @@ public class PhongMayDAO {
     }
 
     public boolean addPhong(String tenPhong, double donGia, String moTa) {
-        String sql = "INSERT INTO PHONG_MAY (TenPhong, DonGiaCoBan, MoTa) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO PHONG_MAY (TenPhong, DonGiaCoBan, MoTaDichVuKem) VALUES (?, ?, ?)";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, tenPhong);
+            ps.setNString(1, tenPhong);
             ps.setDouble(2, donGia);
-            ps.setString(3, moTa);
+            ps.setNString(3, moTa);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -44,12 +44,12 @@ public class PhongMayDAO {
     }
 
     public boolean updatePhong(int maPhong, String tenPhong, double donGia, String moTa) {
-        String sql = "UPDATE PHONG_MAY SET TenPhong = ?, DonGiaCoBan = ?, MoTa = ? WHERE MaPhong = ?";
+        String sql = "UPDATE PHONG_MAY SET TenPhong = ?, DonGiaCoBan = ?, MoTaDichVuKem = ? WHERE MaPhong = ?";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, tenPhong);
+            ps.setNString(1, tenPhong);
             ps.setDouble(2, donGia);
-            ps.setString(3, moTa);
+            ps.setNString(3, moTa);
             ps.setInt(4, maPhong);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -98,7 +98,7 @@ public class PhongMayDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maPhong);
-            ps.setString(2, tenMay);
+            ps.setNString(2, tenMay);
             ps.setString(3, trangThai);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -112,7 +112,7 @@ public class PhongMayDAO {
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, maPhong);
-            ps.setString(2, tenMay);
+            ps.setNString(2, tenMay);
             ps.setString(3, trangThai);
             ps.setInt(4, maMay);
             return ps.executeUpdate() > 0;

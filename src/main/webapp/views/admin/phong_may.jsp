@@ -172,7 +172,7 @@
                     <h5 class="text-white fw-bold mb-3">
                         <i class="fa-solid fa-plus-circle me-2" style="color: var(--cyan);"></i>Thêm Máy Trạm Mới
                     </h5>
-                    <form action="phong-may" method="post" class="row g-3">
+                    <form action="${pageContext.request.contextPath}/admin/phong-may" method="post" class="row g-3">
                         <input type="hidden" name="type" value="addMay">
                         <div class="col-md-4">
                             <select name="maPhong" class="form-select form-p3r" required>
@@ -235,10 +235,10 @@
                                         </td>
                                         <td class="text-end text-nowrap">
                                             <button type="button" class="btn btn-outline-info btn-sm fw-bold"
-                                                    onclick="openEditMayModal('${pm.id}', '${pm.tenMay}', '${pm.trangThai}')">
+                                                    onclick="openEditMayModal('${pm.id}', '${pm.tenPhong}', '${pm.tenMay}', '${pm.trangThai}')">
                                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                                             </button>
-                                            <a href="phong-may?action=deleteMay&id=${pm.id}" class="btn btn-outline-danger btn-sm fw-bold ms-1"
+                                            <a href="${pageContext.request.contextPath}/admin/phong-may?action=deleteMay&id=${pm.id}" class="btn btn-outline-danger btn-sm fw-bold ms-1"
                                                onclick="return confirm('Xóa máy trạm này?')">
                                                 <i class="fa-solid fa-trash"></i>
                                             </a>
@@ -256,7 +256,7 @@
                     <h5 class="text-white fw-bold mb-3">
                         <i class="fa-solid fa-folder-plus me-2" style="color: var(--cyan);"></i>Thêm Khu Vực / Phòng Mới
                     </h5>
-                    <form action="phong-may" method="post" class="row g-3">
+                    <form action="${pageContext.request.contextPath}/admin/phong-may" method="post" class="row g-3">
                         <input type="hidden" name="type" value="addPhong">
                         <div class="col-md-4">
                             <input type="text" name="tenPhong" class="form-control form-p3r" placeholder="Tên phòng (VD: Khu Streamer)" required>
@@ -299,7 +299,7 @@
                                                     onclick="openEditPhongModal('${p.maPhong}', '${p.tenPhong}', '${p.donGiaCoBan}', '${p.moTa}')">
                                                 <i class="fa-solid fa-pen-to-square"></i> Sửa Giá
                                             </button>
-                                            <a href="phong-may?action=deletePhong&id=${p.maPhong}" class="btn btn-outline-danger btn-sm fw-bold ms-1"
+                                            <a href="${pageContext.request.contextPath}/admin/phong-may?action=deletePhong&id=${p.maPhong}" class="btn btn-outline-danger btn-sm fw-bold ms-1"
                                                onclick="return confirm('Xóa phòng này? (Lưu ý: Phải xóa hết máy trong phòng trước)')">
                                                 <i class="fa-solid fa-trash"></i>
                                             </a>
@@ -316,7 +316,7 @@
 
     <div class="modal fade modal-p3r" id="editMayModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <form action="phong-may" method="post" class="modal-content">
+            <form action="${pageContext.request.contextPath}/admin/phong-may" method="post" class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" style="color: var(--cyan);"><i class="fa-solid fa-desktop me-2"></i>Cập Nhật Máy Trạm</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -326,7 +326,7 @@
                     <input type="hidden" name="maMay" id="editMayId">
                     <div class="mb-3">
                         <label class="form-label">Khu vực / Phòng</label>
-                        <select name="maPhong" class="form-select form-p3r">
+                        <select name="maPhong" id="editMaPhongMay" class="form-select form-p3r" required>
                             <c:forEach var="p" items="${phongList}">
                                 <option value="${p.maPhong}">${p.tenPhong}</option>
                             </c:forEach>
@@ -355,7 +355,7 @@
 
     <div class="modal fade modal-p3r" id="editPhongModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <form action="phong-may" method="post" class="modal-content">
+            <form action="${pageContext.request.contextPath}/admin/phong-may" method="post" class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold" style="color: var(--cyan);"><i class="fa-solid fa-layer-group me-2"></i>Cập Nhật Phòng &amp; Đơn Giá</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
@@ -386,12 +386,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function openEditMayModal(id, tenMay, trangThai) {
+        function openEditMayModal(id, tenPhong, tenMay, trangThai) {
             document.getElementById('editMayId').value = id;
             document.getElementById('editTenMay').value = tenMay;
             document.getElementById('editTrangThaiMay').value = trangThai;
+
+            // Tự động chọn đúng phòng theo tên phòng hiện tại của máy
+            const selectPhong = document.getElementById('editMaPhongMay');
+            for (let i = 0; i < selectPhong.options.length; i++) {
+                if (selectPhong.options[i].text.trim() === tenPhong.trim()) {
+                    selectPhong.selectedIndex = i;
+                    break;
+                }
+            }
             new bootstrap.Modal(document.getElementById('editMayModal')).show();
         }
+
         function openEditPhongModal(id, tenPhong, donGia, moTa) {
             document.getElementById('editMaPhong').value = id;
             document.getElementById('editTenPhong').value = tenPhong;

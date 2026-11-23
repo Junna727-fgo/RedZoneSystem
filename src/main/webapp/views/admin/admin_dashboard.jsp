@@ -1,222 +1,712 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="com.redzone.dao.PhongMayDAO" %>
+<%@ page import="com.redzone.model.PhongMay" %>
+<%@ page import="java.util.List" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%
+    // Lấy số liệu thực tế trạng thái các máy trạm từ SQL Server để vẽ biểu đồ chính xác 100%
+    int countAvailable = 0;
+    int countInUse = 0;
+    int countMaintenance = 0;
+    try {
+        PhongMayDAO pmDao = new PhongMayDAO();
+        List<PhongMay> listMay = pmDao.getAllPhongMay();
+        if (listMay != null) {
+            for (PhongMay m : listMay) {
+                if ("AVAILABLE".equalsIgnoreCase(m.getTrangThai())) {
+                    countAvailable++;
+                } else if ("IN_USE".equalsIgnoreCase(m.getTrangThai())) {
+                    countInUse++;
+                } else {
+                    countMaintenance++;
+                }
+            }
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedZone Cyber - Admin Control Center</title>
+    <title>RedZone Admin - Control Center</title>
+    <!-- Bootstrap 5, FontAwesome, Google Fonts & Chart.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Montserrat:ital,wght@0,800;1,900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
-            --bg-abyss: #030a18;
-            --card-bg: #07193d;
-            --card-hover: #0b2454;
-            --cyan: #00e5ff;
-            --cyan-glow: rgba(0, 229, 255, 0.35);
-            --border: rgba(0, 229, 255, 0.28);
-            --text-main: #f4f9ff;
-            --text-muted: #8fb4df;
-            --danger: #ff2a55;
+            --bg-main: #060b19;
+            --bg-sidebar: #081026;
+            --bg-card: #0b1633;
+            --bg-topbar: #070e21;
+            --cyan-primary: #00d2ff;
+            --blue-accent: #0077ff;
+            --cyan-glow: rgba(0, 210, 255, 0.35);
+            --border-color: rgba(0, 210, 255, 0.22);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
         }
-        * { box-sizing: border-box; }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Rajdhani', sans-serif;
             margin: 0;
             min-height: 100vh;
-            background: radial-gradient(circle at 20% 15%, #0e3888 0%, #061430 48%, #020814 100%);
-            color: var(--text-main);
-            font-family: 'Chakra Petch', sans-serif;
+            overflow-x: hidden;
         }
-        .navbar-p3r {
-            background: rgba(4, 14, 36, 0.95);
-            border-bottom: 2px solid var(--cyan);
-            box-shadow: 0 4px 20px rgba(0, 229, 255, 0.18);
-            padding: 0.8rem 2rem;
+
+        /* ================= SIDEBAR (BÊN TRÁI) ================= */
+        .wrapper {
+            display: flex;
+            min-height: 100vh;
         }
-        .brand-logo {
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 900;
-            font-style: italic;
-            font-size: 1.45rem;
-            color: #fff !important;
+
+        .sidebar {
+            width: 260px;
+            background: linear-gradient(180deg, #091533 0%, #050b1c 100%);
+            border-right: 1px solid var(--border-color);
+            box-shadow: 4px 0 25px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 1000;
+        }
+
+        .sidebar-brand {
+            padding: 1.4rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            text-decoration: none;
             letter-spacing: 1.5px;
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .sidebar-brand i {
+            color: var(--cyan-primary);
+            text-shadow: 0 0 10px var(--cyan-glow);
+        }
+
+        .sidebar-brand span {
+            color: var(--cyan-primary);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 1.2rem 0.9rem;
+            margin: 0;
+            flex: 1;
+        }
+
+        .sidebar-item {
+            margin-bottom: 0.45rem;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0.85rem 1.1rem;
+            color: var(--text-muted);
             text-decoration: none;
-        }
-        .brand-logo i, .brand-logo span { color: var(--cyan); text-shadow: 0 0 10px var(--cyan-glow); }
-        .btn-logout {
-            border: 1px solid var(--danger);
-            color: #ff8ca3;
             font-weight: 700;
-            letter-spacing: 1px;
-            transition: 0.2s;
-        }
-        .btn-logout:hover { background: var(--danger); color: #fff; box-shadow: 0 0 14px rgba(255, 42, 85, 0.45); }
-        .section-header {
-            border-left: 4px solid var(--cyan);
-            padding-left: 12px;
-            margin-bottom: 1.5rem;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 900;
-            font-style: italic;
-            font-size: 1.1rem;
-            letter-spacing: 1.5px;
+            font-size: 1.02rem;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
-            color: #fff;
-        }
-        .stat-card {
-            background: linear-gradient(145deg, #0b2454, #05122b);
-            border: 1px solid var(--border);
-            border-left: 4px solid var(--cyan);
-            border-radius: 6px;
-            padding: 1.5rem;
-            height: 100%;
-            position: relative;
-            overflow: hidden;
-            transition: 0.25s;
-        }
-        .stat-card:hover { transform: translateY(-4px); border-color: var(--cyan); box-shadow: 0 8px 24px rgba(0, 229, 255, 0.18); }
-        .stat-title { font-size: 0.95rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; margin-bottom: 0.5rem; }
-        .stat-value { font-family: 'Montserrat', sans-serif; font-size: 2rem; font-weight: 900; font-style: italic; color: #fff; margin: 0; position: relative; z-index: 2; }
-        .stat-value.highlight-cyan { color: var(--cyan); text-shadow: 0 0 12px var(--cyan-glow); }
-        .stat-icon { position: absolute; right: 20px; top: 50%; transform: translateY(-50%); font-size: 3.2rem; color: rgba(0, 229, 255, 0.14); pointer-events: none; transition: 0.25s; }
-        .stat-card:hover .stat-icon { color: rgba(0, 229, 255, 0.28); transform: translateY(-50%) scale(1.08); }
-        .btn-report-link { position: relative; z-index: 2; border: 1px solid var(--cyan); color: var(--cyan); font-size: 0.85rem; transition: 0.2s; }
-        .btn-report-link:hover { background: var(--cyan); color: var(--bg-abyss); box-shadow: 0 0 12px var(--cyan-glow); }
-        .module-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-top: 3px solid var(--cyan);
             border-radius: 8px;
-            padding: 2rem 1.5rem;
+            transition: all 0.25s ease;
+        }
+
+        .sidebar-link i {
+            width: 22px;
             text-align: center;
+            font-size: 1.15rem;
+        }
+
+        .sidebar-link:hover {
+            color: #fff;
+            background: rgba(0, 210, 255, 0.1);
+        }
+
+        .sidebar-link.active {
+            background: linear-gradient(90deg, rgba(0, 210, 255, 0.25), rgba(0, 119, 255, 0.12));
+            color: #fff;
+            border-left: 4px solid var(--cyan-primary);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.15);
+        }
+
+        .sidebar-link.active i {
+            color: var(--cyan-primary);
+        }
+
+        /* ================= MAIN PANEL (BÊN PHẢI) ================= */
+        .main-panel {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            background-image:
+                radial-gradient(circle at 80% 15%, rgba(0, 210, 255, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 20% 85%, rgba(0, 119, 255, 0.08) 0%, transparent 45%);
+        }
+
+        /* Topbar */
+        .topbar {
+            height: 68px;
+            background-color: rgba(7, 14, 33, 0.92);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            backdrop-filter: blur(8px);
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .topbar-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+            color: #fff;
+            letter-spacing: 1px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+        }
+
+        .btn-logout-cyber {
+            border: 1px solid #ff3b5c;
+            color: #ff5c77;
+            font-weight: 700;
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.92rem;
+            transition: all 0.25s ease;
+        }
+
+        .btn-logout-cyber:hover {
+            background: #ff3b5c;
+            color: #fff;
+            box-shadow: 0 0 12px rgba(255, 59, 92, 0.45);
+        }
+
+        /* Content Area */
+        .content-wrapper {
+            padding: 1.8rem 2rem;
+        }
+
+        /* Thẻ thống kê nhanh trên cùng */
+        .mini-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.2rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.25s ease, border-color 0.25s ease;
+        }
+
+        .mini-stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--cyan-primary);
+            box-shadow: 0 6px 20px rgba(0, 210, 255, 0.15);
+        }
+
+        .mini-stat-label {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        .mini-stat-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 0.2rem 0 0;
+        }
+
+        .mini-stat-icon {
+            font-size: 2.2rem;
+            color: var(--cyan-primary);
+            opacity: 0.75;
+        }
+
+        /* Các Card Biểu Đồ & Danh Sách Công Việc */
+        .dashboard-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
             height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            transition: 0.25s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.45);
         }
-        .module-card:hover { background: var(--card-hover); border-color: var(--cyan); transform: translateY(-5px); box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 16px rgba(0, 229, 255, 0.2); }
-        .module-icon-box {
-            width: 64px; height: 64px; margin: 0 auto 1.2rem;
-            background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.35);
-            border-radius: 10px; display: flex; align-items: center; justify-content: center;
-            font-size: 1.75rem; color: var(--cyan); transition: 0.25s;
+
+        .card-header-custom {
+            margin-bottom: 1rem;
         }
-        .module-card:hover .module-icon-box { background: var(--cyan); color: var(--bg-abyss); box-shadow: 0 0 18px var(--cyan-glow); }
-        .module-title { font-family: 'Montserrat', sans-serif; font-size: 1.15rem; font-weight: 800; font-style: italic; text-transform: uppercase; color: #fff; margin-bottom: 0.6rem; }
-        .module-desc { color: var(--text-muted); font-size: 0.96rem; margin-bottom: 1.5rem; }
-        .btn-p3r {
-            background: linear-gradient(90deg, #00c4ff, #1858ff);
-            border: none; color: #020a18; font-family: 'Montserrat', sans-serif; font-weight: 900; font-style: italic;
-            letter-spacing: 1.2px; text-transform: uppercase; padding: 0.65rem 1.5rem; border-radius: 4px; width: 100%; transition: 0.2s;
+
+        .card-title-custom {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #fff;
+            margin: 0;
         }
-        .btn-p3r:hover { background: linear-gradient(90deg, #ffffff, #52f2ff); color: #020a18; box-shadow: 0 0 18px var(--cyan-glow); }
+
+        .card-subtitle-custom {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .card-footer-custom {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 0.88rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Khối Tasks / Tác vụ quản trị */
+        .task-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 0.6rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+            transition: background 0.2s;
+        }
+
+        .task-item:hover {
+            background: rgba(0, 210, 255, 0.06);
+            border-radius: 6px;
+        }
+
+        .task-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .task-checkbox {
+            accent-color: var(--cyan-primary);
+            width: 17px;
+            height: 17px;
+            cursor: pointer;
+        }
+
+        .task-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .task-actions a {
+            color: var(--cyan-primary);
+            margin-left: 10px;
+            font-size: 0.95rem;
+            text-decoration: none;
+        }
+
+        .task-actions a:hover {
+            color: #fff;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 75px;
+            }
+            .sidebar-brand span, .sidebar-link span {
+                display: none;
+            }
+            .main-panel {
+                margin-left: 75px;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark navbar-p3r">
-        <div class="container-fluid">
-            <a class="navbar-brand brand-logo" href="dashboard">
-                <i class="fa-solid fa-terminal"></i>
-                REDZONE <span>ADMIN</span>
-            </a>
-            <div class="d-flex align-items-center gap-3">
-                <span class="text-light fw-semibold">
-                    <i class="fa-solid fa-user-shield me-1" style="color: var(--cyan);"></i>
-                    Xin chào, <strong class="text-white">${sessionScope.user.fullName != null ? sessionScope.user.fullName : 'Admin'}</strong>
+<div class="wrapper">
+    <!-- SIDEBAR BÊN TRÁI -->
+    <aside class="sidebar">
+        <a href="dashboard" class="sidebar-brand">
+            <i class="fa-solid fa-terminal"></i>
+            <div>REDZONE <span>ADMIN</span></div>
+        </a>
+
+        <ul class="sidebar-menu">
+            <li class="sidebar-item">
+                <a href="dashboard" class="sidebar-link active">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="users" class="sidebar-link">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Quản Lý Tài Khoản</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="phong-may" class="sidebar-link">
+                    <i class="fa-solid fa-desktop"></i>
+                    <span>Phòng &amp; Máy Trạm</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="dich-vu" class="sidebar-link">
+                    <i class="fa-solid fa-utensils"></i>
+                    <span>Menu F&amp;B &amp; Combo</span>
+                    <li class="sidebar-item">
+                        <a href="tin-nhan" class="sidebar-link">
+                            <i class="fa-solid fa-headset"></i>
+                            <span>Tin Nhắn Khách</span>
+                            <% int unreadMsg = com.redzone.util.TinNhanStore.countUnread(); %>
+                            <% if (unreadMsg > 0) { %>
+                                <span class="badge bg-danger ms-auto"><%= unreadMsg %></span>
+                            <% } %>
+                        </a>
+                    </li>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="bao-cao" class="sidebar-link">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Doanh Thu &amp; Báo Cáo</span>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="${pageContext.request.contextPath}/profile.jsp" class="sidebar-link">
+                    <i class="fa-solid fa-id-badge"></i>
+                    <span>Hồ Sơ Cá Nhân</span>
+                </a>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- MAIN PANEL BÊN PHẢI -->
+    <div class="main-panel">
+        <!-- TOPBAR -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <h1 class="topbar-title">Dashboard</h1>
+                <span class="badge bg-info text-dark fw-bold">
+                    <i class="fa-solid fa-signal me-1"></i> Hệ thống Online
                 </span>
-                <a href="${pageContext.request.contextPath}/logout" class="btn btn-logout btn-sm px-3">
+            </div>
+
+            <div class="topbar-right">
+                <span class="text-light fw-semibold">
+                    <i class="fa-solid fa-user-shield text-info me-1"></i>
+                    Xin chào, <strong>${sessionScope.user.fullName != null ? sessionScope.user.fullName : 'Đặng Trần Gia Huy'}</strong>
+                </span>
+                <a href="${pageContext.request.contextPath}/logout" class="btn-logout-cyber">
                     <i class="fa-solid fa-right-from-bracket me-1"></i> Đăng xuất
                 </a>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <div class="container py-5">
-        <h5 class="section-header">Tổng Quan Hệ Thống</h5>
-        <div class="row g-4 mb-5">
-            <div class="col-md-4">
-                <div class="stat-card d-flex flex-column justify-content-center">
-                    <div class="stat-title">Tổng Tài Khoản</div>
-                    <h2 class="stat-value">${totalUsers}</h2>
-                    <i class="fa-solid fa-users stat-icon"></i>
-                </div>
-            </div>
+        <!-- NỘI DUNG CHÍNH -->
+        <div class="content-wrapper">
 
-            <div class="col-md-4">
-                <div class="stat-card d-flex flex-column justify-content-center">
-                    <div class="stat-title">Tổng Máy / Phòng</div>
-                    <h2 class="stat-value">${totalPhong}</h2>
-                    <i class="fa-solid fa-desktop stat-icon"></i>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="stat-card d-flex flex-column justify-content-center">
-                    <div class="stat-title">Tổng Doanh Thu</div>
-                    <h2 class="stat-value highlight-cyan">
-                        <fmt:formatNumber value="${totalRevenue}" type="number" maxFractionDigits="0"/> VNĐ
-                    </h2>
-                    <div class="mt-2">
-                        <a href="bao-cao" class="btn btn-sm btn-report-link fw-bold px-3">
-                            <i class="fa-solid fa-chart-line me-1"></i> Xem chi tiết &amp; Xuất báo cáo
-                        </a>
+            <!-- Hàng chỉ số tổng quan nhanh -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="mini-stat-card">
+                        <div>
+                            <div class="mini-stat-label">Tổng Tài Khoản</div>
+                            <div class="mini-stat-val">${totalUsers}</div>
+                        </div>
+                        <i class="fa-solid fa-users mini-stat-icon"></i>
                     </div>
-                    <i class="fa-solid fa-sack-dollar stat-icon"></i>
                 </div>
-            </div>
-        </div>
-
-        <h5 class="section-header">Trung Tâm Điều Khiển</h5>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="module-card">
-                    <div>
-                        <div class="module-icon-box"><i class="fa-solid fa-user-gear"></i></div>
-                        <h4 class="module-title">Quản Lý Tài Khoản</h4>
-                        <p class="module-desc">Phân quyền Admin/IT, duyệt thành viên mới, khóa, mở khóa hoặc cấp lại mật khẩu.</p>
+                <div class="col-md-4">
+                    <div class="mini-stat-card">
+                        <div>
+                            <div class="mini-stat-label">Tổng Máy / Phòng</div>
+                            <div class="mini-stat-val"><%= countAvailable + countInUse + countMaintenance %></div>
+                        </div>
+                        <i class="fa-solid fa-computer mini-stat-icon"></i>
                     </div>
-                    <a href="users" class="btn btn-p3r">
-                        Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="module-card">
-                    <div>
-                        <div class="module-icon-box"><i class="fa-solid fa-server"></i></div>
-                        <h4 class="module-title">Quản Lý Phòng &amp; Máy</h4>
-                        <p class="module-desc">Thêm, sửa, xóa máy trạm, cài đặt khu vực phòng và cập nhật đơn giá giờ chơi.</p>
+                <div class="col-md-4">
+                    <div class="mini-stat-card">
+                        <div>
+                            <div class="mini-stat-label">Tổng Doanh Thu</div>
+                            <div class="mini-stat-val text-info">
+                                <fmt:formatNumber value="${totalRevenue}" type="number" maxFractionDigits="0"/> VNĐ
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-sack-dollar mini-stat-icon"></i>
                     </div>
-                    <a href="phong-may" class="btn btn-p3r">
-                        Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
                 </div>
             </div>
 
-            <div class="col-md-4">
-                <div class="module-card">
-                    <div>
-                        <div class="module-icon-box"><i class="fa-solid fa-utensils"></i></div>
-                        <h4 class="module-title">Quản Lý Menu F&amp;B</h4>
-                        <p class="module-desc">Quản lý thực đơn đồ ăn, thức uống, gói Combo khuyến mãi và số lượng tồn kho.</p>
+            <!-- HÀNG 1: BIỂU ĐỒ TRÒN TỶ LỆ MÁY + BIỂU ĐỒ MIỀN LƯỢNG KHÁCH -->
+            <div class="row g-4 mb-4">
+                <!-- Khối 1 (Trái - 4 cột): Tỷ lệ trạng thái phòng máy -->
+                <div class="col-lg-4">
+                    <div class="dashboard-card">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom">Tình Trạng Máy Trạm</h5>
+                            <div class="card-subtitle-custom">Phân bổ trạng thái phòng máy hiện tại</div>
+                        </div>
+                        <div style="height: 230px; display: flex; justify-content: center;">
+                            <canvas id="machinePieChart"></canvas>
+                        </div>
+                        <div class="card-footer-custom">
+                            <span><i class="fa-regular fa-clock me-1"></i> Cập nhật thời gian thực</span>
+                            <a href="phong-may" class="text-info text-decoration-none fw-bold">Chi tiết →</a>
+                        </div>
                     </div>
-                    <a href="dich-vu" class="btn btn-p3r">
-                        Truy cập <i class="fa-solid fa-arrow-right ms-1"></i>
-                    </a>
+                </div>
+
+                <!-- Khối 2 (Phải - 8 cột): Lưu lượng người chơi 24h -->
+                <div class="col-lg-8">
+                    <div class="dashboard-card">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom">Lưu Lượng Truy Cập Phòng Game</h5>
+                            <div class="card-subtitle-custom">Thống kê lượt hội viên và khách vãng lai trong 24 giờ</div>
+                        </div>
+                        <div style="height: 230px;">
+                            <canvas id="trafficAreaChart"></canvas>
+                        </div>
+                        <div class="card-footer-custom">
+                            <span><i class="fa-solid fa-rotate me-1"></i> Dữ liệu đồng bộ từ hệ thống máy trạm</span>
+                            <a href="users" class="text-info text-decoration-none fw-bold">Quản lý hội viên →</a>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- HÀNG 2: BIỂU ĐỒ CỘT DOANH THU + DANH SÁCH TÁC VỤ QUẢN TRỊ -->
+            <div class="row g-4">
+                <!-- Khối 3 (Trái - 6 cột): Biểu đồ cột doanh thu Giờ chơi & F&B -->
+                <div class="col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="card-header-custom">
+                            <h5 class="card-title-custom">Doanh Thu Giờ Chơi &amp; Dịch Vụ F&amp;B</h5>
+                            <div class="card-subtitle-custom">So sánh nguồn thu theo tháng (Triệu VNĐ)</div>
+                        </div>
+                        <div style="height: 240px;">
+                            <canvas id="revenueBarChart"></canvas>
+                        </div>
+                        <div class="card-footer-custom">
+                            <span><i class="fa-solid fa-check-circle text-info me-1"></i> Đã bao gồm gói Combo khuyến mãi</span>
+                            <a href="bao-cao" class="text-info text-decoration-none fw-bold">Xuất báo cáo →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khối 4 (Phải - 6 cột): Tác vụ điều hành nhanh (Tasks) -->
+                <div class="col-lg-6">
+                    <div class="dashboard-card">
+                        <div class="card-header-custom d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="card-title-custom">Tác Vụ Quản Trị Hệ Thống</h5>
+                                <div class="card-subtitle-custom">Phím tắt xử lý nhanh các nghiệp vụ Admin</div>
+                            </div>
+                            <span class="badge bg-primary">4 Module</span>
+                        </div>
+
+                        <ul class="task-list">
+                            <li class="task-item">
+                                <div class="task-left">
+                                    <input type="checkbox" class="task-checkbox" checked>
+                                    <span class="task-text">Duyệt tài khoản hội viên mới &amp; Phân quyền Admin / IT</span>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="users" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
+                                </div>
+                            </li>
+                            <li class="task-item">
+                                <div class="task-left">
+                                    <input type="checkbox" class="task-checkbox" checked>
+                                    <span class="task-text">Cấu hình khu vực phòng (Standard, VIP) &amp; Đơn giá giờ chơi</span>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="phong-may" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
+                                </div>
+                            </li>
+                            <li class="task-item">
+                                <div class="task-left">
+                                    <input type="checkbox" class="task-checkbox">
+                                    <span class="task-text">Cập nhật thực đơn F&amp;B, tồn kho và tạo Combo khuyến mãi</span>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="dich-vu" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
+                                </div>
+                            </li>
+                            <li class="task-item">
+                                <div class="task-left">
+                                    <input type="checkbox" class="task-checkbox">
+                                    <span class="task-text">Kiểm tra đối soát doanh thu &amp; Xuất báo cáo tổng kết Excel</span>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="bao-cao" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
+                                </div>
+                            </li>
+                        </ul>
+
+                        <div class="card-footer-custom">
+                            <span><i class="fa-solid fa-shield-halved text-info me-1"></i> Quyền quản trị cao nhất (Admin)</span>
+                            <a href="bao-cao" class="text-info text-decoration-none fw-bold">Xem chi tiết →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Script vẽ 3 biểu đồ đồng bộ tông màu Xanh Dương Neon -->
+<script>
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.font.family = "'Rajdhani', sans-serif";
+
+    // 1. Pie Chart: Tình trạng máy trạm (Dữ liệu thật từ Database)
+    new Chart(document.getElementById('machinePieChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Sẵn sàng', 'Đang chơi', 'Bảo trì'],
+            datasets: [{
+                data: [<%= countAvailable %>, <%= countInUse %>, <%= countMaintenance %>],
+                backgroundColor: ['#00d2ff', '#0066ff', '#ff4757'],
+                borderColor: '#0b1633',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { padding: 15, font: { size: 13, weight: 'bold' } } }
+            }
+        }
+    });
+
+    // 2. Area Chart: Lưu lượng truy cập 24h
+    new Chart(document.getElementById('trafficAreaChart'), {
+        type: 'line',
+        data: {
+            labels: ['9:00AM', '12:00PM', '3:00PM', '6:00PM', '9:00PM', '12:00AM', '3:00AM', '6:00AM'],
+            datasets: [
+                {
+                    label: 'Hội viên (Member)',
+                    data: [25, 45, 55, 72, 88, 65, 40, 20],
+                    borderColor: '#00d2ff',
+                    backgroundColor: 'rgba(0, 210, 255, 0.25)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Khách vãng lai',
+                    data: [10, 20, 28, 35, 42, 30, 15, 8],
+                    borderColor: '#0066ff',
+                    backgroundColor: 'rgba(0, 102, 255, 0.25)',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 13, weight: 'bold' } } }
+            }
+        }
+    });
+
+    // 3. Bar Chart: Doanh thu Giờ chơi & F&B
+    new Chart(document.getElementById('revenueBarChart'), {
+        type: 'bar',
+        data: {
+            labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+            datasets: [
+                {
+                    label: 'Tiền giờ chơi',
+                    data: [42, 38, 35, 58, 49, 44, 39, 46, 52, 56, 68, 75],
+                    backgroundColor: '#00d2ff',
+                    borderRadius: 4
+                },
+                {
+                    label: 'Dịch vụ F&B',
+                    data: [28, 22, 25, 40, 34, 30, 26, 32, 36, 41, 50, 58],
+                    backgroundColor: '#0066ff',
+                    borderRadius: 4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { grid: { color: 'rgba(255,255,255,0.06)' }, beginAtZero: true },
+                x: { grid: { display: false } }
+            },
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 13, weight: 'bold' } } }
+            }
+        }
+    });
+</script>
+
 </body>
 </html>
