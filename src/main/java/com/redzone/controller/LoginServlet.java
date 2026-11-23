@@ -62,10 +62,14 @@ public class LoginServlet extends HttpServlet {
             } else if ("IT".equalsIgnoreCase(tk.getRole())) {
                 response.sendRedirect(request.getContextPath() + "/it/dashboard");
             } else {
+                // Kiểm tra số dư (10.000đ/giờ => dưới 167đ là không đủ 1 phút chơi)
+                if (tk.getBalance() < 167) {
+                    session.invalidate(); // Xóa session vừa tạo
+                    response.sendRedirect(request.getContextPath() + "/index.jsp?error=out_of_time");
+                    return;
+                }
                 response.sendRedirect(request.getContextPath() + "/profile");
             }
-        } else {
-            response.sendRedirect(request.getContextPath() + "/index.jsp?error=invalid");
         }
     }
 }

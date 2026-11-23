@@ -335,6 +335,11 @@
                     <i class="fa-solid fa-triangle-exclamation me-1"></i> Sai tên đăng nhập, mật khẩu hoặc tài khoản bị khóa!
                 </div>
             </c:if>
+            <c:if test="${param.error == 'out_of_time'}">
+                <div class="p3r-alert">
+                    <i class="fa-solid fa-wallet me-1"></i> Tài khoản bạn đã hết tiền! Vui lòng liên hệ quầy để nạp thêm giờ chơi.
+                </div>
+            </c:if>
             <c:if test="${param.error == 'unauthorized'}">
                 <div class="p3r-alert">
                     <i class="fa-solid fa-ban me-1"></i> Bạn không có quyền truy cập khu vực này!

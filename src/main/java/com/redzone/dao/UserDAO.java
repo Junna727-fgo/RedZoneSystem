@@ -1,31 +1,46 @@
 package com.redzone.dao;
 
-import com.redzone.model.*;
+import com.redzone.model.MenuItem;
+import com.redzone.model.User;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserDAO extends DBConnection {
+public class UserDAO {
 
-    public User getUserById(int maTK) {
-        String sql = "SELECT MaTK, Username, HoTen, SDT, SoDuVi, TrangThai FROM TAI_KHOAN WHERE MaTK = ?";
+    // Cấu hình kết nối DB - chỉnh lại URL / USER / PASS nếu dự án của bạn dùng tên khác
+    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=RedZoneDB;encrypt=true;trustServerCertificate=true;";
+    private static final String DB_USER = "sa";
+    private static final String DB_PASS = "123456";
+
+    public Connection getConnection() throws SQLException, ClassNotFoundException {
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    }
+
+    // 1. Lấy thông tin User theo MaTK
+    public User getUserById(int userId) {
+        String sql = "SELECT MaTK, TenDangNhap, HoTen, SoDuVi, TrangThai FROM TAI_KHOAN WHERE MaTK = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, maTK);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                User u = new User();
-                u.setUserId(rs.getInt("MaTK"));
-                u.setUsername(rs.getString("Username"));
-                u.setFullName(rs.getNString("HoTen"));
-                u.setPhone(rs.getString("SDT"));
-                u.setEmail(rs.getString("Username") + "@redzone.vn");
-                u.setBalance(rs.getBigDecimal("SoDuVi") != null ? rs.getBigDecimal("SoDuVi") : BigDecimal.ZERO);
-                u.setStatus(rs.getString("TrangThai"));
-                return u;
+            ps.setInt(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User u = new User();
+                    u.setUserId(rs.getInt("MaTK"));
+                    u.setUsername(rs.getString("TenDangNhap"));
+                    u.setFullName(rs.getString("HoTen"));
+                    BigDecimal bal = rs.getBigDecimal("SoDuVi");
+                    u.setBalance(bal != null ? bal : BigDecimal.ZERO);
+                    int st = rs.getInt("TrangThai");
+                    u.setStatus(st == 1 ? "Hoạt động" : (st == 0 ? "Khóa" : "Chờ duyệt"));
+                    return u;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -33,122 +48,65 @@ public class UserDAO extends DBConnection {
         return null;
     }
 
-    public boolean updateProfile(int userId, String fullName, String phone, String email) {
-        String sql = "UPDATE TAI_KHOAN SET HoTen = ?, SDT = ? WHERE MaTK = ?";
+    // 2. Lấy danh sách món ăn / đồ uống
+    public List<MenuItem> getMenuItems() {
+        List<MenuItem> list = new ArrayList<>();
+        String sql = "SELECT item_id, item_name, price FROM MenuItems";
         try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setNString(1, fullName);
-            ps.setString(2, phone);
-            ps.setInt(3, userId);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean topUpBalance(int userId, BigDecimal amount) {
-        String sql = "UPDATE TAI_KHOAN SET SoDuVi = ISNULL(SoDuVi, 0) + ? WHERE MaTK = ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBigDecimal(1, amount);
-            ps.setInt(2, userId);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean deductBalance(int userId, BigDecimal amount) {
-        String sql = "UPDATE TAI_KHOAN SET SoDuVi = SoDuVi - ? WHERE MaTK = ? AND SoDuVi >= ?";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setBigDecimal(1, amount);
-            ps.setInt(2, userId);
-            ps.setBigDecimal(3, amount);
-            return ps.executeUpdate() > 0;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public List<Computer> searchComputers(String keyword, String roomFilter) {
-        List<Computer> list = new ArrayList<>();
-        String sql = "SELECT * FROM Computers WHERE 1=1";
-        if (keyword != null && !keyword.trim().isEmpty()) {
-            sql += " AND machine_code LIKE ?";
-        }
-        if (roomFilter != null && !roomFilter.trim().isEmpty() && !"ALL".equals(roomFilter)) {
-            sql += " AND room_name = ?";
-        }
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            int idx = 1;
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                ps.setString(idx++, "%" + keyword.trim() + "%");
-            }
-            if (roomFilter != null && !roomFilter.trim().isEmpty() && !"ALL".equals(roomFilter)) {
-                ps.setString(idx++, roomFilter);
-            }
-            ResultSet rs = ps.executeQuery();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                list.add(new Computer(
-                        rs.getInt("machine_id"),
-                        rs.getString("machine_code"),
-                        rs.getNString("room_name"),
-                        rs.getNString("specs"),
-                        rs.getBigDecimal("price_per_hour"),
-                        rs.getString("status")
-                ));
+                MenuItem item = new MenuItem();
+                item.setItemId(rs.getInt("item_id"));
+                item.setItemName(rs.getString("item_name"));
+                item.setPrice(rs.getBigDecimal("price"));
+                list.add(item);
             }
         } catch (Exception e) {
-            list = getDefaultComputers(keyword, roomFilter);
-        }
-        if (list.isEmpty() && (keyword == null || keyword.isEmpty()) && (roomFilter == null || "ALL".equals(roomFilter))) {
-            list = getDefaultComputers(null, "ALL");
+            MenuItem m1 = new MenuItem();
+            m1.setItemId(1);
+            m1.setItemName("Mì Xào Bò Trứng");
+            m1.setPrice(new BigDecimal("35000"));
+            list.add(m1);
+
+            MenuItem m2 = new MenuItem();
+            m2.setItemId(2);
+            m2.setItemName("Cơm Gà Xối Mỡ");
+            m2.setPrice(new BigDecimal("40000"));
+            list.add(m2);
+
+            MenuItem m3 = new MenuItem();
+            m3.setItemId(3);
+            m3.setItemName("Sting Dâu Lạnh");
+            m3.setPrice(new BigDecimal("15000"));
+            list.add(m3);
+
+            MenuItem m4 = new MenuItem();
+            m4.setItemId(4);
+            m4.setItemName("Combo Cơm + Sting");
+            m4.setPrice(new BigDecimal("50000"));
+            list.add(m4);
         }
         return list;
     }
 
-    public List<Computer> getDefaultComputers(String keyword, String roomFilter) {
-        List<Computer> all = new ArrayList<>();
-        all.add(new Computer(1, "MAY-01", "Phòng Thường", "i5-12400F / RTX 3060 / 165Hz", new BigDecimal("10000"), "AVAILABLE"));
-        all.add(new Computer(2, "MAY-02", "Phòng Thường", "i5-12400F / RTX 3060 / 165Hz", new BigDecimal("10000"), "IN_USE"));
-        all.add(new Computer(3, "VIP-01", "Phòng VIP", "i7-13700F / RTX 4060Ti / 240Hz", new BigDecimal("15000"), "AVAILABLE"));
-        all.add(new Computer(4, "VIP-02", "Phòng VIP", "i7-13700F / RTX 4060Ti / 240Hz", new BigDecimal("15000"), "AVAILABLE"));
-        all.add(new Computer(5, "COMP-01", "Phòng Thi Đấu", "i9-14900K / RTX 4080 / 360Hz", new BigDecimal("25000"), "AVAILABLE"));
-        all.add(new Computer(6, "COUPLE-01", "Phòng Đôi", "i7-13700F / RTX 4060 / Ghế Sofa", new BigDecimal("30000"), "RESERVED"));
-
-        List<Computer> filtered = new ArrayList<>();
-        for (Computer c : all) {
-            boolean matchKey = (keyword == null || keyword.trim().isEmpty()) || c.getMachineCode().toLowerCase().contains(keyword.trim().toLowerCase());
-            boolean matchRoom = (roomFilter == null || "ALL".equals(roomFilter)) || c.getRoomName().equalsIgnoreCase(roomFilter);
-            if (matchKey && matchRoom) {
-                filtered.add(c);
-            }
-        }
-        return filtered;
-    }
-
-    public boolean createBooking(int userId, String machineCode, String roomName, String timeSlot, int hours) {
-        String sql = "INSERT INTO Bookings (user_id, machine_code, room_name, time_slot, hours, status) VALUES (?, ?, ?, ?, ?, 'PENDING')";
+    // 3. Cập nhật hồ sơ cá nhân trong bảng TAI_KHOAN
+    public boolean updateProfile(int userId, String fullName, String phone, String email) {
+        String sql = "UPDATE TAI_KHOAN SET HoTen = ? WHERE MaTK = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, machineCode);
-            ps.setNString(3, roomName);
-            ps.setString(4, timeSlot);
-            ps.setInt(5, hours);
+            ps.setNString(1, fullName);
+            ps.setInt(2, userId);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
+    // 4. Tạo đơn gọi món / thuê gear vào bảng ServiceOrders
     public boolean createServiceOrder(int userId, String machineCode, String itemName, int quantity, String promoCode, BigDecimal finalAmount) {
-        String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'PREPARING')";
+        String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'SERVING')";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -159,18 +117,67 @@ public class UserDAO extends DBConnection {
             ps.setBigDecimal(6, finalAmount);
             return ps.executeUpdate() > 0;
         } catch (Exception e) {
+            e.printStackTrace();
             return false;
         }
     }
 
-    public List<MenuItem> getMenuItems() {
-        List<MenuItem> menu = new ArrayList<>();
-        menu.add(new MenuItem(1, "Mì xào bò trứng", "FOOD", new BigDecimal("35000")));
-        menu.add(new MenuItem(2, "Cơm chiên dương châu", "FOOD", new BigDecimal("40000")));
-        menu.add(new MenuItem(3, "Sting Dâu / Bò Húc", "DRINK", new BigDecimal("15000")));
-        menu.add(new MenuItem(4, "Trà đào cam sả", "DRINK", new BigDecimal("25000")));
-        menu.add(new MenuItem(5, "Combo Đêm (3h chơi + Mì trứng + Sting)", "COMBO", new BigDecimal("55000")));
-        menu.add(new MenuItem(6, "Combo Chiến Thần (5h chơi + Cơm chiên + Bò húc)", "COMBO", new BigDecimal("85000")));
-        return menu;
+    // 5. Trừ tiền/giờ chơi theo thời gian thực vào cột SoDuVi của bảng TAI_KHOAN (khóa chính MaTK)
+    public boolean deductPlayTimeBalance(int userId, BigDecimal amountToDeduct) {
+        String sql = "UPDATE TAI_KHOAN SET SoDuVi = CASE WHEN ISNULL(SoDuVi, 0) >= ? THEN SoDuVi - ? ELSE 0 END WHERE MaTK = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, amountToDeduct);
+            ps.setBigDecimal(2, amountToDeduct);
+            ps.setInt(3, userId);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 6. Khách hàng gửi yêu cầu nạp tiền (Trạng thái PENDING chờ Admin duyệt)
+    public boolean createTopUpRequest(int userId, String machineCode, BigDecimal amount, String methodLabel) {
+        String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, 1, 'TOPUP', ?, 'PENDING')";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, userId);
+            ps.setString(2, machineCode);
+            ps.setNString(3, "NAP_TIEN: " + methodLabel);
+            ps.setBigDecimal(4, amount);
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // 7. Admin bấm "Chấp nhận" -> Cộng tiền vào SoDuVi của khách và đổi trạng thái đơn thành APPROVED
+    public boolean approveTopUpRequest(int orderId, int userId, BigDecimal amount) {
+        String updateOrderSql = "UPDATE ServiceOrders SET status = 'APPROVED' WHERE order_id = ? AND status = 'PENDING'";
+        String updateBalanceSql = "UPDATE TAI_KHOAN SET SoDuVi = ISNULL(SoDuVi, 0) + ? WHERE MaTK = ?";
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement psOrder = conn.prepareStatement(updateOrderSql);
+                 PreparedStatement psUser = conn.prepareStatement(updateBalanceSql)) {
+                psOrder.setInt(1, orderId);
+                int rows = psOrder.executeUpdate();
+                if (rows > 0) {
+                    psUser.setBigDecimal(1, amount);
+                    psUser.setInt(2, userId);
+                    psUser.executeUpdate();
+                    conn.commit();
+                    return true;
+                }
+                conn.rollback();
+            } catch (Exception ex) {
+                conn.rollback();
+                ex.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

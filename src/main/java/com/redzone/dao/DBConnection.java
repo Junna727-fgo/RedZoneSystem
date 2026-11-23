@@ -6,7 +6,7 @@ import java.sql.DriverManager;
 public class DBConnection {
     private static final String URL = "jdbc:sqlserver://localhost:1433;databaseName=QUAN_LY_PHONG_GAME;encrypt=false;trustServerCertificate=true;";
     private static final String USER = "sa";
-    private static final String PASS = "123456789";
+    private static final String PASS = "12345";
 
     public static Connection getConnection() {
         Connection conn = null;
