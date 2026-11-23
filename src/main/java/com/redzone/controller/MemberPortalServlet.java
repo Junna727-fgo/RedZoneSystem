@@ -201,6 +201,9 @@ public class MemberPortalServlet extends HttpServlet {
                 chats.add(new String[]{currentUser.getFullName(), msgContent.trim(), timeNow});
                 chats.add(new String[]{"Nhân viên Quầy", "Quầy đã nhận được tin nhắn: \"" + msgContent.trim() + "\". Nhân viên sẽ hỗ trợ bạn ngay!", timeNow});
                 session.setAttribute("chatHistory", chats);
+                String may = request.getParameter("machineCode");
+                if (may == null || may.trim().isEmpty()) may = "Máy Member (" + currentUser.getUsername() + ")";
+                com.redzone.util.TinNhanStore.addMessage(currentUser.getFullName(), may, "Tin nhắn từ Member", msgContent.trim());
                 request.setAttribute("openModalOnLoad", "modalChat");
             }
 
