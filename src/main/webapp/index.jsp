@@ -8,8 +8,8 @@
     <title>Đăng Nhập - RedZone Cyber System</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,500;0,600;0,700;1,700&family=Montserrat:ital,wght@0,700;0,900;1,800;1,900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/p3r-theme.css">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/font-override.css">
     <style>
         /* 1. Tối ưu GPU cho nền video */
         .p3r-bg-video {
@@ -89,11 +89,9 @@
             border: none;
             background: linear-gradient(100deg, #00e5ff 0%, #0095ff 55%, #1d5bff 100%);
             color: #020a18;
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
             font-size: 0.95rem;
-            letter-spacing: 1.4px;
             text-transform: uppercase;
             clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
             box-shadow: 0 6px 20px rgba(0, 229, 255, 0.28);
@@ -203,11 +201,9 @@
             background: transparent;
             border: none;
             color: #f4f9ff;
-            font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             font-style: italic;
             font-size: 0.78rem;
-            letter-spacing: 1.1px;
             text-transform: uppercase;
             cursor: pointer;
             transition: background 0.18s ease, transform 0.12s ease;
@@ -234,11 +230,9 @@
         .p3r-bgm-hud.is-playing .p3r-bgm-bars span:nth-child(3) { animation-delay: 0.4s; }
         .p3r-bgm-track {
             color: #00e5ff;
-            font-family: 'Chakra Petch', sans-serif;
             font-style: normal;
             font-weight: 700;
             font-size: 0.8rem;
-            letter-spacing: 0.5px;
             border-left: 1px solid rgba(143, 180, 223, 0.35);
             padding-left: 10px;
             max-width: 185px;
@@ -287,7 +281,7 @@
     <!-- Nền Video Makoto (P3R) -->
     <div class="p3r-bg-layer">
         <video class="p3r-bg-video" autoplay loop muted playsinline disablePictureInPicture preload="auto">
-            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=6" type="video/mp4">
+            <source src="${pageContext.request.contextPath}/assets/media/p3r-bg.mp4?v=7" type="video/mp4">
         </video>
         <div class="p3r-video-vignette"></div>
     </div>

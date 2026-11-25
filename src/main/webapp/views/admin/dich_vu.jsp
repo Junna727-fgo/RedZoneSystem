@@ -6,10 +6,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Menu Dịch Vụ &amp; Thuê Gear - RedZone Admin</title>
+    <title>Quản Lý Menu F&amp;B, Thuê Gear &amp; Đơn Khách - RedZone Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Montserrat:ital,wght@0,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/font-override.css">
     <style>
         :root {
             --bg-abyss: #030a18;
@@ -24,7 +24,6 @@
             min-height: 100vh;
             background: radial-gradient(circle at 20% 15%, #0e3888 0%, #061430 48%, #020814 100%);
             color: #f4f9ff;
-            font-family: 'Chakra Petch', sans-serif;
         }
         .navbar-p3r {
             background: rgba(4, 14, 36, 0.95);
@@ -33,20 +32,17 @@
             padding: 0.8rem 2rem;
         }
         .brand-logo {
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
             font-size: 1.4rem;
             color: #fff !important;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-decoration: none;
         }
         .brand-logo i, .brand-logo span { color: var(--cyan); }
         .page-title {
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
-            letter-spacing: 1.5px;
             border-left: 4px solid var(--cyan);
             padding-left: 14px;
             text-transform: uppercase;
@@ -56,7 +52,6 @@
         .nav-tabs-p3r { border-bottom: 2px solid var(--border); gap: 6px; }
         .nav-tabs-p3r .nav-link {
             color: var(--muted);
-            font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             font-style: italic;
             font-size: 0.88rem;
@@ -93,7 +88,6 @@
             background: linear-gradient(90deg, #00c4ff, #1858ff);
             border: none;
             color: #020a18;
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
             text-transform: uppercase;
@@ -113,9 +107,7 @@
         .table-p3r thead th {
             background: #0d327d;
             color: var(--cyan);
-            font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-style: italic;
             font-size: 0.82rem;
             text-transform: uppercase;
             border-bottom: 2px solid var(--cyan);
@@ -172,7 +164,7 @@
 
     <div class="container pb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="page-title m-0">Quản Lý Menu F&amp;B &amp; Thuê Gaming Gear</h3>
+            <h3 class="page-title m-0">Quản Lý Menu F&amp;B, Thuê Gear &amp; Đơn Khách</h3>
             <a href="dashboard" class="btn btn-back px-3">
                 <i class="fa-solid fa-arrow-left me-1"></i> Quay lại Dashboard
             </a>
@@ -194,6 +186,14 @@
                     <i class="fa-solid fa-tags me-2"></i>Combo &amp; Khuyến Mãi
                 </button>
             </li>
+            <li class="nav-item">
+                <button class="nav-link ${param.tab == 'orders' ? 'active' : ''}" data-bs-toggle="tab" data-bs-target="#tab-orders" type="button">
+                    <i class="fa-solid fa-bell-concierge me-2"></i>Đơn Khách Đặt
+                    <c:if test="${servingCount > 0}">
+                        <span class="badge bg-danger ms-1">${servingCount}</span>
+                    </c:if>
+                </button>
+            </li>
         </ul>
 
         <div class="tab-content">
@@ -201,20 +201,20 @@
             <div class="tab-pane fade ${param.tab == null || param.tab == 'food' ? 'show active' : ''}" id="tab-monle">
                 <div class="p3r-card p-4 mb-4">
                     <h5 class="text-white fw-bold mb-3">
-                        <i class="fa-solid fa-plus-circle me-2" style="color: var(--cyan);"></i>Thêm Món Ăn / Đồ Uống Mới
+                        <i class="fa-solid fa-plus-circle me-2" style="color: var(--cyan);"></i>Thêm Món Ăn / Đồ Uống Mới (Lưu trực tiếp vào SQL Server)
                     </h5>
-                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-3">
+                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-2 align-items-center">
                         <input type="hidden" name="type" value="add">
                         <div class="col-md-3">
                             <input type="text" name="tenMon" class="form-control form-p3r" placeholder="Tên món (VD: Cơm gà xối mỡ)" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <input type="number" step="1000" min="0" name="gia" class="form-control form-p3r" placeholder="Giá bán (VNĐ)" required>
                         </div>
-                        <div class="col-md-2">
-                            <input type="number" min="0" name="soLuongTon" class="form-control form-p3r" placeholder="Số lượng tồn" required>
+                        <div class="col-md-1">
+                            <input type="number" min="0" name="soLuongTon" class="form-control form-p3r" placeholder="SL" value="20" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <select name="danhMuc" class="form-select form-p3r" required>
                                 <option value="Cơm">Cơm</option>
                                 <option value="Đồ ăn vặt">Đồ ăn vặt</option>
@@ -223,8 +223,17 @@
                                 <option value="Mì nước">Mì nước</option>
                             </select>
                         </div>
+                        <div class="col-md-3">
+                            <div class="input-group">
+                                <input type="text" name="hinhAnh" id="addFoodImg" class="form-control form-p3r" placeholder="Link ảnh hoặc chọn file ->">
+                                <label class="btn btn-outline-info mb-0" title="Chọn ảnh từ máy tính">
+                                    <i class="fa-solid fa-image"></i>
+                                    <input type="file" accept="image/*" hidden onchange="encodeImageToInput(this, 'addFoodImg')">
+                                </label>
+                            </div>
+                        </div>
                         <div class="col-md-1">
-                            <button type="submit" class="btn btn-p3r w-100 h-100">Thêm</button>
+                            <button type="submit" class="btn btn-p3r w-100 py-2">Thêm</button>
                         </div>
                     </form>
                 </div>
@@ -259,7 +268,7 @@
                                     <tr class="menu-row" data-category="${dv.danhMuc}" data-name="${dv.tenMon}">
                                         <td class="fw-bold text-info">#${dv.id}</td>
                                         <td>
-                                            <img class="food-thumb" src="" alt="${dv.tenMon}">
+                                            <img class="food-thumb" src="${dv.hinhAnh}" data-dbimg="${dv.hinhAnh}" alt="${dv.tenMon}">
                                         </td>
                                         <td class="fw-bold text-white">${dv.tenMon}</td>
                                         <td class="fw-bold" style="color: var(--cyan);">
@@ -272,7 +281,7 @@
                                         <td class="text-end text-nowrap">
                                             <button type="button" class="btn btn-outline-info btn-sm fw-bold"
                                                     data-id="${dv.id}" data-ten="${dv.tenMon}" data-gia="${dv.gia}"
-                                                    data-ton="${dv.soLuongTon}" data-dm="${dv.danhMuc}"
+                                                    data-ton="${dv.soLuongTon}" data-dm="${dv.danhMuc}" data-img="${dv.hinhAnh}"
                                                     onclick="openEditDv(this)">
                                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                                             </button>
@@ -289,7 +298,7 @@
                 </div>
             </div>
 
-            <!-- TAB 2: QUẢN LÝ THUÊ GAMING GEAR (ĐỒNG BỘ VỚI MEMBER) -->
+            <!-- TAB 2: QUẢN LÝ THUÊ GAMING GEAR -->
             <div class="tab-pane fade ${param.tab == 'gear' ? 'show active' : ''}" id="tab-gear">
                 <div class="p3r-card p-4 mb-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -302,20 +311,29 @@
                             </a>
                         </c:if>
                     </div>
-                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-3">
+                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-2 align-items-center">
                         <input type="hidden" name="type" value="add">
                         <input type="hidden" name="danhMuc" value="GEAR">
-                        <div class="col-md-5">
-                            <input type="text" name="tenMon" class="form-control form-p3r" placeholder="Tên Gear (VD: Chuột Logitech G Pro X Superlight)" required>
+                        <div class="col-md-4">
+                            <input type="text" name="tenMon" class="form-control form-p3r" placeholder="Tên Gear (VD: Chuột Logitech G Pro X)" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" step="1000" min="0" name="gia" class="form-control form-p3r" placeholder="Giá / giờ (VNĐ)" required>
+                        </div>
+                        <div class="col-md-2">
+                            <input type="number" min="0" name="soLuongTon" class="form-control form-p3r" placeholder="SL sẵn có" value="10" required>
                         </div>
                         <div class="col-md-3">
-                            <input type="number" step="1000" min="0" name="gia" class="form-control form-p3r" placeholder="Giá thuê / giờ (VNĐ)" required>
-                        </div>
-                        <div class="col-md-3">
-                            <input type="number" min="0" name="soLuongTon" class="form-control form-p3r" placeholder="Số lượng sẵn có" value="10" required>
+                            <div class="input-group">
+                                <input type="text" name="hinhAnh" id="addGearImg" class="form-control form-p3r" placeholder="Link ảnh hoặc chọn file ->">
+                                <label class="btn btn-outline-info mb-0" title="Chọn ảnh từ máy tính">
+                                    <i class="fa-solid fa-image"></i>
+                                    <input type="file" accept="image/*" hidden onchange="encodeImageToInput(this, 'addGearImg')">
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-1">
-                            <button type="submit" class="btn btn-p3r w-100 h-100">Thêm</button>
+                            <button type="submit" class="btn btn-p3r w-100 py-2">Thêm</button>
                         </div>
                     </form>
                 </div>
@@ -339,7 +357,7 @@
                                     <tr class="menu-row" data-category="GEAR" data-name="${g.tenMon}">
                                         <td class="fw-bold text-info">#${g.id}</td>
                                         <td>
-                                            <img class="food-thumb" src="" alt="${g.tenMon}">
+                                            <img class="food-thumb" src="${g.hinhAnh}" data-dbimg="${g.hinhAnh}" alt="${g.tenMon}">
                                         </td>
                                         <td class="fw-bold text-white">${g.tenMon}</td>
                                         <td class="fw-bold" style="color: var(--cyan);">
@@ -359,7 +377,7 @@
                                         <td class="text-end text-nowrap">
                                             <button type="button" class="btn btn-outline-info btn-sm fw-bold"
                                                     data-id="${g.id}" data-ten="${g.tenMon}" data-gia="${g.gia}"
-                                                    data-ton="${g.soLuongTon}" data-dm="GEAR"
+                                                    data-ton="${g.soLuongTon}" data-dm="GEAR" data-img="${g.hinhAnh}"
                                                     onclick="openEditDv(this)">
                                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                                             </button>
@@ -370,13 +388,6 @@
                                         </td>
                                     </tr>
                                 </c:forEach>
-                                <c:if test="${empty gearList}">
-                                    <tr>
-                                        <td colspan="7" class="text-center py-4 text-muted">
-                                            Chưa có thiết bị Gear nào trong danh sách. Bấm nút <strong>"Nạp nhanh 6 Gear mặc định của quán"</strong> ở trên để đồng bộ ngay!
-                                        </td>
-                                    </tr>
-                                </c:if>
                             </tbody>
                         </table>
                     </div>
@@ -389,20 +400,29 @@
                     <h5 class="text-white fw-bold mb-3">
                         <i class="fa-solid fa-gift me-2" style="color: var(--cyan);"></i>Tạo Gói Combo / Khuyến Mãi Mới
                     </h5>
-                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-3">
+                    <form action="${pageContext.request.contextPath}/admin/dich-vu" method="post" class="row g-2 align-items-center">
                         <input type="hidden" name="type" value="add">
                         <input type="hidden" name="danhMuc" value="COMBO">
-                        <div class="col-md-5">
+                        <div class="col-md-4">
                             <input type="text" name="tenMon" class="form-control form-p3r" placeholder="Tên Combo (VD: Combo Cày Đêm Mì + Sting)" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <input type="number" step="1000" min="0" name="gia" class="form-control form-p3r" placeholder="Giá ưu đãi (VNĐ)" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <input type="number" min="0" name="soLuongTon" class="form-control form-p3r" placeholder="Số suất" value="50" required>
                         </div>
+                        <div class="col-md-3">
+                            <div class="input-group">
+                                <input type="text" name="hinhAnh" id="addComboImg" class="form-control form-p3r" placeholder="Link ảnh hoặc chọn file ->">
+                                <label class="btn btn-outline-info mb-0" title="Chọn ảnh từ máy tính">
+                                    <i class="fa-solid fa-image"></i>
+                                    <input type="file" accept="image/*" hidden onchange="encodeImageToInput(this, 'addComboImg')">
+                                </label>
+                            </div>
+                        </div>
                         <div class="col-md-1">
-                            <button type="submit" class="btn btn-p3r w-100 h-100">Tạo</button>
+                            <button type="submit" class="btn btn-p3r w-100 py-2">Tạo</button>
                         </div>
                     </form>
                 </div>
@@ -426,7 +446,7 @@
                                     <tr class="menu-row" data-category="COMBO" data-name="${cb.tenMon}">
                                         <td class="fw-bold text-info">#${cb.id}</td>
                                         <td>
-                                            <img class="food-thumb" src="" alt="${cb.tenMon}">
+                                            <img class="food-thumb" src="${cb.hinhAnh}" data-dbimg="${cb.hinhAnh}" alt="${cb.tenMon}">
                                         </td>
                                         <td class="fw-bold text-white">${cb.tenMon}</td>
                                         <td class="fw-bold" style="color: var(--cyan);">
@@ -437,7 +457,7 @@
                                         <td class="text-end text-nowrap">
                                             <button type="button" class="btn btn-outline-info btn-sm fw-bold"
                                                     data-id="${cb.id}" data-ten="${cb.tenMon}" data-gia="${cb.gia}"
-                                                    data-ton="${cb.soLuongTon}" data-dm="COMBO"
+                                                    data-ton="${cb.soLuongTon}" data-dm="COMBO" data-img="${cb.hinhAnh}"
                                                     onclick="openEditDv(this)">
                                                 <i class="fa-solid fa-pen-to-square"></i> Sửa
                                             </button>
@@ -448,6 +468,73 @@
                                         </td>
                                     </tr>
                                 </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: ĐƠN GỌI MÓN & THUÊ GEAR TỪ KHÁCH HÀNG -->
+            <div class="tab-pane fade ${param.tab == 'orders' ? 'show active' : ''}" id="tab-orders">
+                <div class="p3r-card overflow-hidden">
+                    <div class="p-3 border-bottom d-flex justify-content-between align-items-center" style="border-color: var(--border) !important;">
+                        <h5 class="fw-bold m-0 text-white">
+                            <i class="fa-solid fa-receipt me-2 text-info"></i>Danh Sách Đơn Gọi Món F&amp;B &amp; Thuê Gear Từ Hội Viên
+                        </h5>
+                        <span class="badge bg-info text-dark">Đồng bộ trực tiếp với cổng Member &amp; IT</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-p3r table-striped table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Mã Đơn</th>
+                                    <th>Hội Viên</th>
+                                    <th>Máy Trạm</th>
+                                    <th>Nội Dung Đặt</th>
+                                    <th>SL</th>
+                                    <th>Tổng Tiền</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="text-end">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <c:forEach var="ord" items="${customerOrders}">
+                                    <tr>
+                                        <td class="fw-bold text-info">#${ord.orderId}</td>
+                                        <td class="fw-bold text-white">${ord.customerName}</td>
+                                        <td><span class="badge bg-primary fs-6">${ord.machineCode}</span></td>
+                                        <td class="fw-bold text-white">${ord.itemName}</td>
+                                        <td>${ord.quantity}</td>
+                                        <td class="fw-bold text-success">
+                                            <fmt:formatNumber value="${ord.amount}" maxFractionDigits="0"/> VNĐ
+                                        </td>
+                                        <td>
+                                            <c:choose>
+                                                <c:when test="${ord.status == 'COMPLETED'}">
+                                                    <span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Đã giao xong</span>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="badge bg-warning text-dark"><i class="fa-solid fa-clock me-1"></i>Đang phục vụ</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </td>
+                                        <td class="text-end">
+                                            <c:if test="${ord.status != 'COMPLETED'}">
+                                                <a href="${pageContext.request.contextPath}/admin/dich-vu?orderAction=complete&orderId=${ord.orderId}"
+                                                   class="btn btn-p3r btn-sm px-3">
+                                                    Hoàn tất đơn
+                                                </a>
+                                            </c:if>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                                <c:if test="${empty customerOrders}">
+                                    <tr>
+                                        <td colspan="8" class="text-center py-4 text-muted">
+                                            Chưa có đơn gọi món hoặc thuê gear nào từ hội viên.
+                                        </td>
+                                    </tr>
+                                </c:if>
                             </tbody>
                         </table>
                     </div>
@@ -493,6 +580,16 @@
                             <option value="COMBO">Combo Khuyến Mãi (COMBO)</option>
                         </select>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Link hình ảnh hoặc chọn file từ máy tính</label>
+                        <div class="input-group">
+                            <input type="text" name="hinhAnh" id="editHinhAnh" class="form-control form-p3r" placeholder="https://...">
+                            <label class="btn btn-outline-info mb-0" title="Chọn ảnh từ máy tính">
+                                <i class="fa-solid fa-image"></i>
+                                <input type="file" accept="image/*" hidden onchange="encodeImageToInput(this, 'editHinhAnh')">
+                            </label>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
@@ -504,68 +601,50 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Tự động gán hình ảnh thực tế chuẩn theo tên từng món & thiết bị Gear
-        function getFoodImage(name, category) {
+        function encodeImageToInput(fileInput, targetInputId) {
+            const file = fileInput.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 300;
+                    const scale = maxW / img.width;
+                    canvas.width = maxW;
+                    canvas.height = img.height * scale;
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    document.getElementById(targetInputId).value = canvas.toDataURL('image/jpeg', 0.8);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function getFallbackImage(name, category) {
             const n = (name || '').toLowerCase();
             const c = (category || '').toLowerCase();
 
-            // Hình ảnh Gaming Gear (Chuột, Bàn phím, Tai nghe)
             if (c === 'gear' || n.includes('chuột') || n.includes('phím') || n.includes('tai nghe')) {
-                if (n.includes('chuột') && n.includes('phím')) {
-                    return 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=200&q=80';
-                }
-                if (n.includes('chuột') || n.includes('logitech') || n.includes('razer')) {
-                    return 'https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=200&q=80';
-                }
-                if (n.includes('phím') || n.includes('corsair') || n.includes('wooting')) {
-                    return 'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=200&q=80';
-                }
-                if (n.includes('tai nghe') || n.includes('hyperx')) {
-                    return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80';
-                }
+                if (n.includes('chuột') && n.includes('phím')) return 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=200&q=80';
+                if (n.includes('chuột') || n.includes('logitech') || n.includes('razer')) return 'https://images.unsplash.com/photo-1527814050087-3793815479db?auto=format&fit=crop&w=200&q=80';
+                if (n.includes('phím') || n.includes('corsair') || n.includes('wooting')) return 'https://images.unsplash.com/photo-1595225476474-87563907a212?auto=format&fit=crop&w=200&q=80';
+                if (n.includes('tai nghe') || n.includes('hyperx')) return 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=200&q=80';
                 return 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=200&q=80';
             }
-
-            // Hình ảnh Đồ ăn & Nước uống
-            if (n.includes('pepsi') || n.includes('pessi')) {
-                return 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('coca')) {
-                return 'https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('redbull') || n.includes('bò húc') || n.includes('tăng lực')) {
-                return 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('sting') || n.includes('dâu')) {
-                return 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('trà') || n.includes('cam') || n.includes('chanh')) {
-                return 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('cơm gà') || n.includes('gà')) {
-                return 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('cơm') || c === 'cơm') {
-                return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('mì trộn') || n.includes('mì xào') || c === 'mì trộn') {
-                return 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('mì nước') || n.includes('mì cay') || n.includes('mì bò') || c === 'mì nước') {
-                return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('khoai')) {
-                return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=200&q=80';
-            }
-            if (n.includes('xúc xích') || n.includes('cá viên') || n.includes('snack') || c === 'đồ ăn vặt') {
-                return 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=200&q=80';
-            }
-            if (c === 'nước' || c === 'drink') {
-                return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=200&q=80';
-            }
-            if (c === 'combo') {
-                return 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=200&q=80';
-            }
+            if (n.includes('pepsi') || n.includes('pessi')) return 'https://images.unsplash.com/photo-1629203851122-3726ecdf080e?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('coca')) return 'https://images.unsplash.com/photo-1554866585-cd94860890b7?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('redbull') || n.includes('bò húc') || n.includes('tăng lực')) return 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('sting') || n.includes('dâu')) return 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('trà') || n.includes('cam') || n.includes('chanh')) return 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('cơm gà') || n.includes('gà')) return 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('cơm') || c === 'cơm') return 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('mì trộn') || n.includes('mì xào') || c === 'mì trộn') return 'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('mì nước') || n.includes('mì cay') || n.includes('mì bò') || c === 'mì nước') return 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('khoai')) return 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=200&q=80';
+            if (n.includes('xúc xích') || n.includes('cá viên') || n.includes('snack') || c === 'đồ ăn vặt') return 'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&w=200&q=80';
+            if (c === 'nước' || c === 'drink') return 'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=200&q=80';
+            if (c === 'combo') return 'https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&w=200&q=80';
             return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=200&q=80';
         }
 
@@ -588,7 +667,12 @@
 
                 row.setAttribute('data-normalized-cat', normalizedCat);
                 const img = row.querySelector('.food-thumb');
-                if (img) img.src = getFoodImage(name, normalizedCat);
+                if (img) {
+                    const dbImg = img.getAttribute('data-dbimg');
+                    const fallback = getFallbackImage(name, normalizedCat);
+                    img.src = (dbImg && dbImg.trim() !== '') ? dbImg : fallback;
+                    img.onerror = function() { this.src = fallback; };
+                }
 
                 const badge = row.querySelector('.category-label');
                 if (badge) badge.textContent = normalizedCat;
@@ -617,6 +701,7 @@
             document.getElementById('editGiaMon').value = btn.getAttribute('data-gia');
             document.getElementById('editTonKho').value = btn.getAttribute('data-ton');
             document.getElementById('editDanhMuc').value = normalizeCategory(name, rawDm);
+            document.getElementById('editHinhAnh').value = btn.getAttribute('data-img') || '';
             new bootstrap.Modal(document.getElementById('editDvModal')).show();
         }
     </script>

@@ -4,28 +4,42 @@ import com.redzone.model.MenuItem;
 import com.redzone.model.User;
 import java.math.BigDecimal;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UserDAO {
 
-    // Cấu hình kết nối DB - chỉnh lại URL / USER / PASS nếu dự án của bạn dùng tên khác
-    private static final String DB_URL = "jdbc:sqlserver://localhost:1433;databaseName=RedZoneDB;encrypt=true;trustServerCertificate=true;";
-    private static final String DB_USER = "sa";
-    private static final String DB_PASS = "123456";
-
-    public Connection getConnection() throws SQLException, ClassNotFoundException {
-        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    public Connection getConnection() throws SQLException {
+        return DBConnection.getConnection();
     }
 
-    // 1. Lấy thông tin User theo MaTK
+    // Tự động đảm bảo bảng ServiceOrders tồn tại để lưu đơn gọi món, thuê gear và yêu cầu nạp tiền
+    private void ensureServiceOrdersTable(Connection conn) {
+        String sql = "IF OBJECT_ID('ServiceOrders', 'U') IS NULL " +
+                "CREATE TABLE ServiceOrders (" +
+                "    order_id INT IDENTITY(1,1) PRIMARY KEY," +
+                "    user_id INT NOT NULL," +
+                "    machine_code NVARCHAR(50)," +
+                "    item_name NVARCHAR(200)," +
+                "    quantity INT DEFAULT 1," +
+                "    promo_code NVARCHAR(50)," +
+                "    final_amount DECIMAL(18,2)," +
+                "    status NVARCHAR(50) DEFAULT 'SERVING'," +
+                "    created_at DATETIME DEFAULT GETDATE()" +
+                ")";
+        try (Statement st = conn.createStatement()) {
+            st.execute(sql);
+        } catch (Exception ignored) {
+        }
+    }
+
+    // 1. Lấy thông tin User theo MaTK (khớp đúng cột Username, TrangThai kiểu VARCHAR)
     public User getUserById(int userId) {
-        String sql = "SELECT MaTK, TenDangNhap, HoTen, SoDuVi, TrangThai FROM TAI_KHOAN WHERE MaTK = ?";
+        String sql = "SELECT MaTK, Username, HoTen, SoDuVi, TrangThai FROM TAI_KHOAN WHERE MaTK = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setInt(1, userId);
@@ -33,12 +47,13 @@ public class UserDAO {
                 if (rs.next()) {
                     User u = new User();
                     u.setUserId(rs.getInt("MaTK"));
-                    u.setUsername(rs.getString("TenDangNhap"));
+                    u.setUsername(rs.getString("Username"));
                     u.setFullName(rs.getString("HoTen"));
                     BigDecimal bal = rs.getBigDecimal("SoDuVi");
                     u.setBalance(bal != null ? bal : BigDecimal.ZERO);
-                    int st = rs.getInt("TrangThai");
-                    u.setStatus(st == 1 ? "Hoạt động" : (st == 0 ? "Khóa" : "Chờ duyệt"));
+                    String st = rs.getString("TrangThai");
+                    u.setStatus("ACTIVE".equalsIgnoreCase(st) || "1".equals(st) ? "Hoạt động"
+                            : ("LOCKED".equalsIgnoreCase(st) || "0".equals(st) ? "Khóa" : "Chờ duyệt"));
                     return u;
                 }
             }
@@ -48,21 +63,26 @@ public class UserDAO {
         return null;
     }
 
-    // 2. Lấy danh sách món ăn / đồ uống
+    // 2. Lấy danh sách món ăn / đồ uống trực tiếp từ bảng MON_AN_DO_UONG (đồng bộ với Admin)
     public List<MenuItem> getMenuItems() {
         List<MenuItem> list = new ArrayList<>();
-        String sql = "SELECT item_id, item_name, price FROM MenuItems";
+        String sql = "SELECT MaMon, TenMon, DonGia FROM MON_AN_DO_UONG WHERE UPPER(ISNULL(DanhMuc, '')) <> 'GEAR' AND ISNULL(SoLuongTon, 1) > 0";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 MenuItem item = new MenuItem();
-                item.setItemId(rs.getInt("item_id"));
-                item.setItemName(rs.getString("item_name"));
-                item.setPrice(rs.getBigDecimal("price"));
+                item.setItemId(rs.getInt("MaMon"));
+                item.setItemName(rs.getString("TenMon"));
+                item.setPrice(rs.getBigDecimal("DonGia"));
                 list.add(item);
             }
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Dự phòng dữ liệu mẫu nếu bảng MON_AN_DO_UONG chưa có dữ liệu
+        if (list.isEmpty()) {
             MenuItem m1 = new MenuItem();
             m1.setItemId(1);
             m1.setItemName("Mì Xào Bò Trứng");
@@ -104,25 +124,27 @@ public class UserDAO {
         }
     }
 
-    // 4. Tạo đơn gọi món / thuê gear vào bảng ServiceOrders
+    // 4. Tạo đơn gọi món / thuê gear vào bảng ServiceOrders (hiện sang giao diện Admin & IT)
     public boolean createServiceOrder(int userId, String machineCode, String itemName, int quantity, String promoCode, BigDecimal finalAmount) {
         String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, ?, ?, ?, 'SERVING')";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, machineCode);
-            ps.setNString(3, itemName);
-            ps.setInt(4, quantity);
-            ps.setString(5, promoCode);
-            ps.setBigDecimal(6, finalAmount);
-            return ps.executeUpdate() > 0;
+        try (Connection conn = getConnection()) {
+            ensureServiceOrdersTable(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setString(2, machineCode);
+                ps.setNString(3, itemName);
+                ps.setInt(4, quantity);
+                ps.setString(5, promoCode);
+                ps.setBigDecimal(6, finalAmount);
+                return ps.executeUpdate() > 0;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
     }
 
-    // 5. Trừ tiền/giờ chơi theo thời gian thực vào cột SoDuVi của bảng TAI_KHOAN (khóa chính MaTK)
+    // 5. Trừ tiền trong cột SoDuVi của bảng TAI_KHOAN (khóa chính MaTK)
     public boolean deductPlayTimeBalance(int userId, BigDecimal amountToDeduct) {
         String sql = "UPDATE TAI_KHOAN SET SoDuVi = CASE WHEN ISNULL(SoDuVi, 0) >= ? THEN SoDuVi - ? ELSE 0 END WHERE MaTK = ?";
         try (Connection conn = getConnection();
@@ -140,13 +162,15 @@ public class UserDAO {
     // 6. Khách hàng gửi yêu cầu nạp tiền (Trạng thái PENDING chờ Admin duyệt)
     public boolean createTopUpRequest(int userId, String machineCode, BigDecimal amount, String methodLabel) {
         String sql = "INSERT INTO ServiceOrders (user_id, machine_code, item_name, quantity, promo_code, final_amount, status) VALUES (?, ?, ?, 1, 'TOPUP', ?, 'PENDING')";
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, userId);
-            ps.setString(2, machineCode);
-            ps.setNString(3, "NAP_TIEN: " + methodLabel);
-            ps.setBigDecimal(4, amount);
-            return ps.executeUpdate() > 0;
+        try (Connection conn = getConnection()) {
+            ensureServiceOrdersTable(conn);
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, userId);
+                ps.setString(2, machineCode);
+                ps.setNString(3, "NAP_TIEN: " + methodLabel);
+                ps.setBigDecimal(4, amount);
+                return ps.executeUpdate() > 0;
+            }
         } catch (Exception e) {
             e.printStackTrace();
             return false;

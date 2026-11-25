@@ -1,7 +1,9 @@
 package com.redzone.controller;
 
+import com.redzone.dao.DichVuDAO;
 import com.redzone.dao.UserDAO;
 import com.redzone.model.*;
+import com.redzone.util.TinNhanStore;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,22 +43,24 @@ public class MemberPortalServlet extends HttpServlet {
             return false;
         }
 
+        // Luôn đồng bộ lại số dư mới nhất từ SQL Server
+        User dbUser = userDAO.getUserById(userLog.getId());
         User currentUser = (User) session.getAttribute("currentUser");
-        if (currentUser == null || currentUser.getUserId() != userLog.getId()) {
-            currentUser = userDAO.getUserById(userLog.getId());
-            if (currentUser == null) {
-                currentUser = new User();
-                currentUser.setUserId(userLog.getId());
-                currentUser.setUsername(userLog.getUsername());
-                currentUser.setFullName(userLog.getFullName());
-                currentUser.setBalance(BigDecimal.valueOf(userLog.getBalance()));
-                currentUser.setStatus(userLog.getTrangThai() == 1 ? "Hoạt động"
-                        : (userLog.getTrangThai() == 0 ? "Khóa" : "Chờ duyệt"));
-            }
-            if (currentUser.getBalance() == null) {
-                currentUser.setBalance(BigDecimal.ZERO);
-            }
+        if (dbUser != null) {
+            currentUser = dbUser;
             session.setAttribute("currentUser", currentUser);
+        } else if (currentUser == null) {
+            currentUser = new User();
+            currentUser.setUserId(userLog.getId());
+            currentUser.setUsername(userLog.getUsername());
+            currentUser.setFullName(userLog.getFullName());
+            currentUser.setBalance(BigDecimal.valueOf(userLog.getBalance()));
+            currentUser.setStatus(userLog.getTrangThai() == 1 ? "Hoạt động"
+                    : (userLog.getTrangThai() == 0 ? "Khóa" : "Chờ duyệt"));
+            session.setAttribute("currentUser", currentUser);
+        }
+        if (currentUser.getBalance() == null) {
+            currentUser.setBalance(BigDecimal.ZERO);
         }
 
         if (session.getAttribute("orderHistory") == null) {
@@ -72,36 +77,61 @@ public class MemberPortalServlet extends HttpServlet {
 
         List<String[]> gameList = new ArrayList<>();
         gameList.add(new String[]{"League of Legends", "MOBA • Riot Games", "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&q=80", "HOT", "MOBA"});
-        gameList.add(new String[]{"Dota 2", "MOBA • Valve", "https://images.unsplash.com/photo-1560253023-3ec5d502959f?w=400&q=80", "ESPORTS", "MOBA"});
         gameList.add(new String[]{"VALORANT", "FPS • Riot Games", "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=400&q=80", "HOT", "FPS"});
         gameList.add(new String[]{"Counter-Strike 2", "FPS • Valve", "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?w=400&q=80", "ESPORTS", "FPS"});
-        gameList.add(new String[]{"CrossFire (Đột Kích)", "FPS • Smilegate", "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=400&q=80", "CLASSIC", "FPS"});
-        gameList.add(new String[]{"PUBG: Battlegrounds", "Battle Royale • Krafton", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80", "SURVIVAL", "BATTLE ROYALE"});
-        gameList.add(new String[]{"Apex Legends", "Battle Royale • Respawn", "https://images.unsplash.com/photo-1605901309584-818e25960a8f?w=400&q=80", "ACTION", "BATTLE ROYALE"});
         gameList.add(new String[]{"FC Online (FIFA)", "Sports • EA", "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&q=80", "POPULAR", "SPORTS"});
+        gameList.add(new String[]{"PUBG: Battlegrounds", "Battle Royale • Krafton", "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&q=80", "FPS", "BATTLE ROYALE"});
         gameList.add(new String[]{"Genshin Impact", "RPG • HoYoverse", "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400&q=80", "RPG", "RPG"});
-        gameList.add(new String[]{"Black Myth: Wukong", "RPG • Game Science", "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?w=400&q=80", "AAA", "RPG"});
         session.setAttribute("gameList", gameList);
 
+        // Lấy danh sách Gear và Menu F&B kèm ảnh gốc từ bảng MON_AN_DO_UONG (đồng bộ 100% với Admin)
         List<String[]> gearList = new ArrayList<>();
-        gearList.add(new String[]{"1", "Chuột Logitech G Pro X Superlight 2", "15000", "CHUOT", "Siêu nhẹ 60g • Cảm biến HERO 2 32K DPI"});
-        gearList.add(new String[]{"2", "Chuột Razer DeathAdder V3 Pro", "15000", "CHUOT", "Công thái học • Focus Pro 30K Optical"});
-        gearList.add(new String[]{"3", "Chuột Razer Viper V3 Pro White", "18000", "CHUOT", "Chuẩn Esport FPS • Polling Rate 8000Hz"});
-        gearList.add(new String[]{"4", "Chuột Zowie EC2-CW Wireless", "15000", "CHUOT", "Chuyên trị CS2 / VALORANT • Dock sạc rời"});
-        gearList.add(new String[]{"5", "Chuột Lamzu Atlantis OG V2 4K", "12000", "CHUOT", "Siêu nhẹ 55g • Switch Huano Blue Shell"});
+        List<MenuItem> dbMenuItems = new ArrayList<>();
+        try {
+            DichVuDAO dvDao = new DichVuDAO();
+            for (DichVu dv : dvDao.getAllDichVu()) {
+                if ("GEAR".equalsIgnoreCase(dv.getDanhMuc())) {
+                    if (dv.getSoLuongTon() > 0) {
+                        String lower = dv.getTenMon().toLowerCase();
+                        String gCat = lower.contains("combo") ? "COMBO"
+                                : (lower.contains("chuột") ? "CHUOT"
+                                : (lower.contains("phím") ? "BAN_PHIM" : "COMBO"));
+                        gearList.add(new String[]{
+                                String.valueOf(dv.getId()),
+                                dv.getTenMon(),
+                                String.valueOf((long) dv.getGia()),
+                                gCat,
+                                "Sẵn có: " + dv.getSoLuongTon() + " bộ tại quầy",
+                                dv.getHinhAnh() != null ? dv.getHinhAnh().trim() : ""
+                        });
+                    }
+                } else {
+                    MenuItem item = new MenuItem();
+                    item.setItemId(dv.getId());
+                    item.setItemName(dv.getTenMon());
+                    item.setCategory(dv.getDanhMuc());
+                    item.setPrice(BigDecimal.valueOf(dv.getGia()));
+                    item.setImageUrl(dv.getHinhAnh());
+                    dbMenuItems.add(item);
+                }
+            }
+        } catch (Exception ignored) {}
 
-        gearList.add(new String[]{"6", "Bàn phím Wooting 60HE (Rapid Trigger)", "25000", "BAN_PHIM", "Switch từ tính Lekker • Rapid Trigger 0.1mm"});
-        gearList.add(new String[]{"7", "Bàn phím Corsair K70 MAX RGB", "18000", "BAN_PHIM", "Switch MGX chỉnh điểm nhận phím • Kê tay êm"});
-        gearList.add(new String[]{"8", "Bàn phím Razer Huntsman V3 Pro TKL", "22000", "BAN_PHIM", "Analog Optical Gen-2 • Chuẩn thi đấu"});
-        gearList.add(new String[]{"9", "Bàn phím Logitech G Pro X TKL Lightspeed", "18000", "BAN_PHIM", "Không dây độ trễ thấp • Tactile Switch"});
-        gearList.add(new String[]{"10", "Bàn phím Keychron Q1 Pro Custom", "15000", "BAN_PHIM", "Nhôm nguyên khối • Gõ đầm êm tay"});
-
-        gearList.add(new String[]{"11", "Combo Pro FPS (G Pro X 2 + Wooting 60HE)", "35000", "COMBO", "Tiết kiệm 5.000đ/h • Tối ưu bắn súng"});
-        gearList.add(new String[]{"12", "Combo Razer Esport (Viper V3 Pro + Huntsman V3)", "35000", "COMBO", "Full hệ sinh thái Razer Synapse"});
-        gearList.add(new String[]{"13", "Combo Streamer (DeathAdder V3 + K70 MAX)", "28000", "COMBO", "Mượt mà mọi tựa game MOBA & AAA"});
+        if (gearList.isEmpty()) {
+            gearList.add(new String[]{"1", "Chuột Logitech G Pro X Superlight", "15000", "CHUOT", "Chuột không dây siêu nhẹ 63g", ""});
+            gearList.add(new String[]{"2", "Chuột Razer DeathAdder V3 Pro", "15000", "CHUOT", "Cảm biến Focus Pro 30K", ""});
+            gearList.add(new String[]{"3", "Bàn phím cơ Corsair K70 RGB", "15000", "BAN_PHIM", "Switch Cherry MX Speed", ""});
+            gearList.add(new String[]{"4", "Bàn phím cơ Wooting 60HE (Rapid Trigger)", "25000", "BAN_PHIM", "Rapid Trigger chuẩn Valorant/CS2", ""});
+            gearList.add(new String[]{"5", "Tai nghe HyperX Cloud II Wireless", "10000", "COMBO", "Âm thanh vòm 7.1 không dây", ""});
+            gearList.add(new String[]{"6", "Combo Chuột G Pro X + Phím Wooting 60HE", "35000", "COMBO", "Trọn bộ thi đấu Esport", ""});
+        }
         session.setAttribute("gearList", gearList);
 
-        session.setAttribute("menuItems", userDAO.getMenuItems());
+        if (dbMenuItems.isEmpty()) {
+            dbMenuItems = userDAO.getMenuItems();
+        }
+        session.setAttribute("menuItems", dbMenuItems);
+
         updateRemainingTime(session, currentUser.getBalance());
         return true;
     }
@@ -127,6 +157,31 @@ public class MemberPortalServlet extends HttpServlet {
         request.setCharacterEncoding("UTF-8");
         HttpSession session = request.getSession(true);
         UserDAO userDAO = new UserDAO();
+        String action = request.getParameter("action");
+
+        if ("tickPlayTime".equals(action)) {
+            response.setContentType("application/json;charset=UTF-8");
+            User currentUser = (User) session.getAttribute("currentUser");
+            if (currentUser == null) {
+                response.getWriter().write("{\"status\":\"EXPIRED\"}");
+                return;
+            }
+            BigDecimal ratePerMinute = new BigDecimal("167");
+            userDAO.deductPlayTimeBalance(currentUser.getUserId(), ratePerMinute);
+            User refreshed = userDAO.getUserById(currentUser.getUserId());
+            if (refreshed != null) {
+                currentUser = refreshed;
+                session.setAttribute("currentUser", currentUser);
+            }
+            updateRemainingTime(session, currentUser.getBalance());
+            int remMins = (Integer) session.getAttribute("remainingMinutes");
+            if (currentUser.getBalance().compareTo(BigDecimal.ZERO) <= 0) {
+                response.getWriter().write("{\"status\":\"EXPIRED\"}");
+            } else {
+                response.getWriter().write("{\"status\":\"OK\",\"balance\":" + currentUser.getBalance() + ",\"remainingMinutes\":" + remMins + "}");
+            }
+            return;
+        }
 
         if (!initSessionData(session, userDAO)) {
             response.sendRedirect(request.getContextPath() + "/index.jsp");
@@ -134,7 +189,7 @@ public class MemberPortalServlet extends HttpServlet {
         }
 
         User currentUser = (User) session.getAttribute("currentUser");
-        String action = request.getParameter("action");
+        DecimalFormat df = new DecimalFormat("#,###");
 
         if ("updateProfile".equals(action)) {
             String fullName = request.getParameter("fullName");
@@ -152,31 +207,79 @@ public class MemberPortalServlet extends HttpServlet {
             try {
                 BigDecimal amount = new BigDecimal(request.getParameter("amount"));
                 String method = request.getParameter("method");
-                String methodLabel = "TRANSFER".equals(method) ? "Chuyển khoản QR" : "Tiền mặt tại máy";
+                String machineCode = request.getParameter("machineCode");
+                if (machineCode == null || machineCode.trim().isEmpty()) {
+                    machineCode = "VIP-01";
+                }
 
                 if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                    userDAO.createTopUpRequest(currentUser.getUserId(), "VIP-01", amount, methodLabel);
-                    request.setAttribute("message", "Đã gửi yêu cầu nạp " + amount + " VNĐ (" + methodLabel + ") sang Admin! Vui lòng chờ Admin xác nhận để cộng giờ chơi.");
+                    String methodLabel = "TRANSFER".equals(method) ? "Chuyển khoản QR" : "Tiền mặt tại máy";
+                    boolean ok = userDAO.createTopUpRequest(currentUser.getUserId(), machineCode, amount, methodLabel);
+                    if (ok) {
+                        request.setAttribute("message", "Đã gửi yêu cầu nạp " + df.format(amount) + " VNĐ (" + methodLabel + ")! Quầy Admin đang duyệt cộng tiền cho bạn.");
+                    } else {
+                        request.setAttribute("error", "Lỗi lưu yêu cầu nạp tiền xuống Database!");
+                    }
                 } else {
                     request.setAttribute("error", "Số tiền nạp phải lớn hơn 0!");
                 }
             } catch (Exception e) {
+                e.printStackTrace();
                 request.setAttribute("error", "Số tiền không hợp lệ!");
+            }
+
+        } else if ("orderCart".equals(action)) {
+            String machineCode = request.getParameter("machineCode");
+            String paymentMethod = request.getParameter("paymentMethod");
+            String payTag = "TRANSFER".equals(paymentMethod) ? "CK QR" : "Tiền mặt";
+            String[] itemIds = request.getParameterValues("itemIds");
+            String[] quantities = request.getParameterValues("quantities");
+
+            if (itemIds != null && quantities != null) {
+                List<MenuItem> menuItems = (List<MenuItem>) session.getAttribute("menuItems");
+                List<ServiceOrder> orders = (List<ServiceOrder>) session.getAttribute("orderHistory");
+                BigDecimal grandTotal = BigDecimal.ZERO;
+                int totalItems = 0;
+
+                for (int i = 0; i < itemIds.length; i++) {
+                    int id = Integer.parseInt(itemIds[i]);
+                    int qty = Integer.parseInt(quantities[i]);
+                    if (qty <= 0) continue;
+
+                    MenuItem found = null;
+                    if (menuItems != null) {
+                        for (MenuItem m : menuItems) {
+                            if (m.getItemId() == id) {
+                                found = m;
+                                break;
+                            }
+                        }
+                    }
+                    if (found != null) {
+                        BigDecimal subTotal = found.getPrice().multiply(new BigDecimal(qty));
+                        grandTotal = grandTotal.add(subTotal);
+                        totalItems += qty;
+
+                        userDAO.createServiceOrder(currentUser.getUserId(), machineCode, found.getItemName() + " [" + payTag + "]", qty, "FNB", subTotal);
+                        orders.add(0, new ServiceOrder(orders.size() + 1, machineCode, found.getItemName(), qty, payTag, subTotal, "Đang chuẩn bị"));
+                    }
+                }
+                session.setAttribute("orderHistory", orders);
+                request.setAttribute("message", "Đặt thành công " + totalItems + " món tới máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Nhân viên đang mang ra.");
+                request.setAttribute("openModalOnLoad", "modalService");
             }
 
         } else if ("rentGearCart".equals(action)) {
             String machineCode = request.getParameter("machineCode");
             String paymentMethod = request.getParameter("paymentMethod");
-            String methodLabel = "TRANSFER".equals(paymentMethod) ? "Chuyển khoản QR" : "Tiền mặt tại máy";
+            String payTag = "TRANSFER".equals(paymentMethod) ? "CK QR" : "Tiền mặt";
             String[] gearIds = request.getParameterValues("gearIds");
             String[] gearHours = request.getParameterValues("gearHours");
 
-            if (gearIds != null && gearHours != null && gearIds.length == gearHours.length) {
+            if (gearIds != null && gearHours != null) {
                 List<String[]> gearList = (List<String[]>) session.getAttribute("gearList");
                 List<String> gearHistory = (List<String>) session.getAttribute("gearHistory");
                 BigDecimal grandTotal = BigDecimal.ZERO;
-                StringBuilder summary = new StringBuilder();
-                int count = 0;
 
                 for (int i = 0; i < gearIds.length; i++) {
                     String gId = gearIds[i];
@@ -185,108 +288,38 @@ public class MemberPortalServlet extends HttpServlet {
 
                     for (String[] g : gearList) {
                         if (g[0].equals(gId)) {
-                            BigDecimal subTotal = new BigDecimal(g[2]).multiply(new BigDecimal(hrs));
+                            String gName = g[1];
+                            BigDecimal price = new BigDecimal(g[2]);
+                            BigDecimal subTotal = price.multiply(new BigDecimal(hrs));
                             grandTotal = grandTotal.add(subTotal);
 
-                            userDAO.createServiceOrder(currentUser.getUserId(), machineCode, "Thuê: " + g[1] + " (" + hrs + "h) [" + methodLabel + "]", 1, "Không áp dụng", subTotal);
-                            gearHistory.add(0, g[1] + " (" + hrs + " giờ) tại máy " + machineCode + " - " + subTotal + " VNĐ (" + methodLabel + ")");
-
-                            if (count > 0) summary.append(", ");
-                            summary.append(g[1]).append(" (").append(hrs).append("h)");
-                            count++;
+                            userDAO.createServiceOrder(currentUser.getUserId(), machineCode, "Thuê Gear: " + gName + " (" + hrs + "h) [" + payTag + "]", 1, "GEAR", subTotal);
+                            gearHistory.add(0, gName + " (" + hrs + " giờ) tại máy " + machineCode + " - " + df.format(subTotal) + " VNĐ [" + payTag + "]");
                             break;
                         }
                     }
                 }
-
-                if (count > 0) {
-                    session.setAttribute("gearHistory", gearHistory);
-                    request.setAttribute("message", "Đặt hàng thành công! Thuê: " + summary + " tại máy " + machineCode + " (" + methodLabel + " - " + grandTotal + " VNĐ).");
-                }
-            } else {
-                request.setAttribute("error", "Giỏ thuê Gear đang trống!");
+                session.setAttribute("gearHistory", gearHistory);
+                request.setAttribute("message", "Thuê thành công Gaming Gear tại máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Kỹ thuật viên IT đang mang thiết bị ra.");
                 request.setAttribute("openModalOnLoad", "modalGear");
             }
 
         } else if ("sendMessage".equals(action)) {
             String msgContent = request.getParameter("msgContent");
+            String machineCode = request.getParameter("machineCode");
+            if (machineCode == null || machineCode.trim().isEmpty()) {
+                machineCode = "VIP-01";
+            }
             if (msgContent != null && !msgContent.trim().isEmpty()) {
+                TinNhanStore.addMessage(currentUser.getFullName(), machineCode, "Yêu cầu từ máy trạm", msgContent.trim());
+
                 List<String[]> chats = (List<String[]>) session.getAttribute("chatHistory");
                 String timeNow = new SimpleDateFormat("HH:mm").format(new Date());
                 chats.add(new String[]{currentUser.getFullName(), msgContent.trim(), timeNow});
-                chats.add(new String[]{"Nhân viên Quầy", "Quầy đã nhận được tin nhắn: \"" + msgContent.trim() + "\". Nhân viên sẽ hỗ trợ bạn ngay!", timeNow});
+                chats.add(new String[]{"Nhân viên Quầy", "Quầy Admin đã nhận được tin nhắn: \"" + msgContent.trim() + "\". Nhân viên sẽ hỗ trợ bạn ngay!", timeNow});
                 session.setAttribute("chatHistory", chats);
-                String may = request.getParameter("machineCode");
-                if (may == null || may.trim().isEmpty()) may = "Máy Member (" + currentUser.getUsername() + ")";
-                com.redzone.util.TinNhanStore.addMessage(currentUser.getFullName(), may, "Tin nhắn từ Member", msgContent.trim());
                 request.setAttribute("openModalOnLoad", "modalChat");
             }
-
-        } else if ("orderCart".equals(action)) {
-            String machineCode = request.getParameter("machineCode");
-            String paymentMethod = request.getParameter("paymentMethod");
-            String methodLabel = "TRANSFER".equals(paymentMethod) ? "Chuyển khoản QR" : "Tiền mặt tại máy";
-            String[] itemIds = request.getParameterValues("itemIds");
-            String[] quantities = request.getParameterValues("quantities");
-
-            if (itemIds != null && quantities != null && itemIds.length == quantities.length) {
-                List<MenuItem> allMenu = userDAO.getMenuItems();
-                List<ServiceOrder> orders = (List<ServiceOrder>) session.getAttribute("orderHistory");
-                BigDecimal grandTotal = BigDecimal.ZERO;
-                StringBuilder summary = new StringBuilder();
-                int count = 0;
-
-                for (int i = 0; i < itemIds.length; i++) {
-                    int id = Integer.parseInt(itemIds[i]);
-                    int qty = Integer.parseInt(quantities[i]);
-                    if (qty <= 0) continue;
-
-                    for (MenuItem m : allMenu) {
-                        if (m.getItemId() == id) {
-                            BigDecimal subTotal = m.getPrice().multiply(new BigDecimal(qty));
-                            grandTotal = grandTotal.add(subTotal);
-
-                            userDAO.createServiceOrder(currentUser.getUserId(), machineCode, m.getItemName() + " [" + methodLabel + "]", qty, "Không áp dụng", subTotal);
-                            orders.add(0, new ServiceOrder(orders.size() + 1, machineCode, m.getItemName(), qty, "Không áp dụng", subTotal, "Đang phục vụ (" + methodLabel + ")"));
-
-                            if (count > 0) summary.append(", ");
-                            summary.append(qty).append("x ").append(m.getItemName());
-                            count++;
-                            break;
-                        }
-                    }
-                }
-
-                if (count > 0) {
-                    session.setAttribute("orderHistory", orders);
-                    request.setAttribute("message", "Đặt hàng thành công! Đã gửi đơn: " + summary + " tới máy " + machineCode + " (" + methodLabel + " - " + grandTotal + " VNĐ).");
-                }
-            } else {
-                request.setAttribute("error", "Giỏ hàng đang trống, vui lòng chọn món trước khi xác nhận!");
-                request.setAttribute("openModalOnLoad", "modalService");
-            }
-
-        } else if ("tickPlayTime".equals(action)) {
-            BigDecimal costPerMinute = new BigDecimal("167");
-            BigDecimal currentBal = currentUser.getBalance();
-
-            response.setContentType("application/json;charset=UTF-8");
-            if (currentBal != null && currentBal.compareTo(costPerMinute) >= 0) {
-                userDAO.deductPlayTimeBalance(currentUser.getUserId(), costPerMinute);
-                BigDecimal newBal = currentBal.subtract(costPerMinute);
-                currentUser.setBalance(newBal);
-                session.setAttribute("currentUser", currentUser);
-                updateRemainingTime(session, newBal);
-
-                int remMins = (Integer) session.getAttribute("remainingMinutes");
-                response.getWriter().write("{\"status\":\"OK\", \"balance\":" + newBal.longValue() + ", \"remainingMinutes\":" + remMins + "}");
-            } else {
-                userDAO.deductPlayTimeBalance(currentUser.getUserId(), currentBal != null ? currentBal : BigDecimal.ZERO);
-                currentUser.setBalance(BigDecimal.ZERO);
-                session.invalidate();
-                response.getWriter().write("{\"status\":\"EXPIRED\"}");
-            }
-            return;
         }
 
         request.getRequestDispatcher("/profile.jsp").forward(request, response);

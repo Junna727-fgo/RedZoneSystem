@@ -9,7 +9,7 @@
     <title>Quản Lý Phòng &amp; Máy Trạm - RedZone Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Montserrat:ital,wght@0,800;1,900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/font-override.css">
     <style>
         :root {
             --bg-abyss: #030a18;
@@ -24,7 +24,6 @@
             min-height: 100vh;
             background: radial-gradient(circle at 20% 15%, #0e3888 0%, #061430 48%, #020814 100%);
             color: #f4f9ff;
-            font-family: 'Chakra Petch', sans-serif;
         }
         .navbar-p3r {
             background: rgba(4, 14, 36, 0.95);
@@ -33,20 +32,17 @@
             padding: 0.8rem 2rem;
         }
         .brand-logo {
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
             font-size: 1.4rem;
             color: #fff !important;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             text-decoration: none;
         }
         .brand-logo i, .brand-logo span { color: var(--cyan); }
         .page-title {
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
-            letter-spacing: 1.5px;
             border-left: 4px solid var(--cyan);
             padding-left: 14px;
             text-transform: uppercase;
@@ -56,7 +52,6 @@
         .nav-tabs-p3r { border-bottom: 2px solid var(--border); gap: 6px; }
         .nav-tabs-p3r .nav-link {
             color: var(--muted);
-            font-family: 'Montserrat', sans-serif;
             font-weight: 800;
             font-style: italic;
             font-size: 0.88rem;
@@ -93,7 +88,6 @@
             background: linear-gradient(90deg, #00c4ff, #1858ff);
             border: none;
             color: #020a18;
-            font-family: 'Montserrat', sans-serif;
             font-weight: 900;
             font-style: italic;
             text-transform: uppercase;
@@ -113,9 +107,7 @@
         .table-p3r thead th {
             background: #0d327d;
             color: var(--cyan);
-            font-family: 'Montserrat', sans-serif;
             font-weight: 800;
-            font-style: italic;
             font-size: 0.82rem;
             text-transform: uppercase;
             border-bottom: 2px solid var(--cyan);

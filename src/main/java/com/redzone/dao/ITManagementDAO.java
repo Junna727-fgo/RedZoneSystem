@@ -18,11 +18,11 @@ public class ITManagementDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new MayTram(
-                    rs.getInt("MaMay"),
-                    rs.getInt("MaPhong"),
-                    rs.getString("TenMay"),
-                    rs.getString("CauHinh"),
-                    rs.getString("TrangThai")
+                        rs.getInt("MaMay"),
+                        rs.getInt("MaPhong"),
+                        rs.getString("TenMay"),
+                        rs.getString("CauHinh"),
+                        rs.getString("TrangThai")
                 ));
             }
         } catch (Exception e) {
@@ -54,12 +54,12 @@ public class ITManagementDAO {
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 list.add(new ThietBiPhanCung(
-                    rs.getInt("MaThietBi"),
-                    rs.getInt("MaMay"),
-                    rs.getString("TenThietBi"),
-                    rs.getString("SoSerial"),
-                    rs.getString("TinhTrang"),
-                    rs.getString("MoTaSuCo")
+                        rs.getInt("MaThietBi"),
+                        rs.getInt("MaMay"),
+                        rs.getString("TenThietBi"),
+                        rs.getString("SoSerial"),
+                        rs.getString("TinhTrang"),
+                        rs.getString("MoTaSuCo")
                 ));
             }
         } catch (Exception e) {

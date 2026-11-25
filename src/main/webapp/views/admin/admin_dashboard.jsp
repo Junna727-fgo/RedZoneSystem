@@ -1,25 +1,60 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="com.redzone.dao.PhongMayDAO" %>
+<%@ page import="com.redzone.dao.PhongMayDAO, com.redzone.dao.DBConnection" %>
 <%@ page import="com.redzone.model.PhongMay" %>
-<%@ page import="java.util.List" %>
+<%@ page import="com.redzone.util.TinNhanStore" %>
+<%@ page import="java.util.List, java.sql.*" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%
-    // Lấy số liệu thực tế trạng thái các máy trạm từ SQL Server để vẽ biểu đồ chính xác 100%
+    // Lấy số liệu thực tế từ SQL Server để đồng bộ toàn hệ thống Admin - IT - Member
     int countAvailable = 0;
     int countInUse = 0;
     int countMaintenance = 0;
+    double liveRevenue = 0;
+    int pendingTopUpCount = 0;
+    int pendingServiceCount = 0;
+    int unreadMsg = TinNhanStore.countUnread();
+
     try {
         PhongMayDAO pmDao = new PhongMayDAO();
         List<PhongMay> listMay = pmDao.getAllPhongMay();
         if (listMay != null) {
             for (PhongMay m : listMay) {
-                if ("AVAILABLE".equalsIgnoreCase(m.getTrangThai())) {
+                if ("AVAILABLE".equalsIgnoreCase(m.getTrangThai()) || "SanSang".equalsIgnoreCase(m.getTrangThai())) {
                     countAvailable++;
                 } else if ("IN_USE".equalsIgnoreCase(m.getTrangThai())) {
                     countInUse++;
                 } else {
                     countMaintenance++;
+                }
+            }
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            // 1. Tổng doanh thu thực tế (Đơn F&B/Gear + Yêu cầu nạp tiền đã duyệt)
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT ISNULL(SUM(final_amount), 0) FROM ServiceOrders WHERE status IN ('SERVING', 'COMPLETED', 'APPROVED')");
+                 ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    liveRevenue = rs.getDouble(1);
+                }
+            }
+
+            // 2. Số yêu cầu nạp tiền từ Member đang chờ duyệt
+            try (PreparedStatement ps2 = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM ServiceOrders WHERE promo_code = 'TOPUP' AND status = 'PENDING'");
+                 ResultSet rs2 = ps2.executeQuery()) {
+                if (rs2.next()) {
+                    pendingTopUpCount = rs2.getInt(1);
+                }
+            }
+
+            // 3. Số đơn F&B / Thuê Gear đang chờ phục vụ
+            try (PreparedStatement ps3 = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM ServiceOrders WHERE ISNULL(promo_code, '') <> 'TOPUP' AND status <> 'COMPLETED'");
+                 ResultSet rs3 = ps3.executeQuery()) {
+                if (rs3.next()) {
+                    pendingServiceCount = rs3.getInt(1);
                 }
             }
         }
@@ -36,8 +71,8 @@
     <!-- Bootstrap 5, FontAwesome, Google Fonts & Chart.js -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/assets/css/font-override.css">
 
     <style>
         :root {
@@ -60,7 +95,6 @@
         body {
             background-color: var(--bg-main);
             color: var(--text-main);
-            font-family: 'Rajdhani', sans-serif;
             margin: 0;
             min-height: 100vh;
             overflow-x: hidden;
@@ -89,12 +123,11 @@
         .sidebar-brand {
             padding: 1.4rem 1.5rem;
             border-bottom: 1px solid var(--border-color);
-            font-family: 'Orbitron', sans-serif;
             font-weight: 800;
             font-size: 1.25rem;
             color: #fff;
             text-decoration: none;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -128,8 +161,7 @@
             color: var(--text-muted);
             text-decoration: none;
             font-weight: 700;
-            font-size: 1.02rem;
-            letter-spacing: 0.8px;
+            font-size: 0.98rem;
             text-transform: uppercase;
             border-radius: 8px;
             transition: all 0.25s ease;
@@ -138,7 +170,7 @@
         .sidebar-link i {
             width: 22px;
             text-align: center;
-            font-size: 1.15rem;
+            font-size: 1.1rem;
         }
 
         .sidebar-link:hover {
@@ -190,12 +222,10 @@
         }
 
         .topbar-title {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.15rem;
-            font-weight: 700;
+            font-size: 1.2rem;
+            font-weight: 800;
             margin: 0;
             color: #fff;
-            letter-spacing: 1px;
         }
 
         .topbar-right {
@@ -245,15 +275,13 @@
         }
 
         .mini-stat-label {
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             text-transform: uppercase;
             color: var(--text-muted);
             font-weight: 700;
-            letter-spacing: 0.8px;
         }
 
         .mini-stat-val {
-            font-family: 'Orbitron', sans-serif;
             font-size: 1.6rem;
             font-weight: 800;
             color: #fff;
@@ -284,9 +312,8 @@
         }
 
         .card-title-custom {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.05rem;
-            font-weight: 700;
+            font-size: 1.1rem;
+            font-weight: 800;
             color: #fff;
             margin: 0;
         }
@@ -346,7 +373,7 @@
         }
 
         .task-text {
-            font-size: 1rem;
+            font-size: 0.98rem;
             font-weight: 600;
             color: #e2e8f0;
         }
@@ -396,6 +423,9 @@
                 <a href="users" class="sidebar-link">
                     <i class="fa-solid fa-users-gear"></i>
                     <span>Quản Lý Tài Khoản</span>
+                    <% if (pendingTopUpCount > 0) { %>
+                        <span class="badge bg-success ms-auto"><%= pendingTopUpCount %></span>
+                    <% } %>
                 </a>
             </li>
             <li class="sidebar-item">
@@ -407,17 +437,19 @@
             <li class="sidebar-item">
                 <a href="dich-vu" class="sidebar-link">
                     <i class="fa-solid fa-utensils"></i>
-                    <span>Menu F&amp;B &amp; Combo</span>
-                    <li class="sidebar-item">
-                        <a href="tin-nhan" class="sidebar-link">
-                            <i class="fa-solid fa-headset"></i>
-                            <span>Tin Nhắn Khách</span>
-                            <% int unreadMsg = com.redzone.util.TinNhanStore.countUnread(); %>
-                            <% if (unreadMsg > 0) { %>
-                                <span class="badge bg-danger ms-auto"><%= unreadMsg %></span>
-                            <% } %>
-                        </a>
-                    </li>
+                    <span>Menu F&amp;B &amp; Gear</span>
+                    <% if (pendingServiceCount > 0) { %>
+                        <span class="badge bg-warning text-dark ms-auto"><%= pendingServiceCount %></span>
+                    <% } %>
+                </a>
+            </li>
+            <li class="sidebar-item">
+                <a href="tin-nhan" class="sidebar-link">
+                    <i class="fa-solid fa-headset"></i>
+                    <span>Tin Nhắn Khách</span>
+                    <% if (unreadMsg > 0) { %>
+                        <span class="badge bg-danger ms-auto"><%= unreadMsg %></span>
+                    <% } %>
                 </a>
             </li>
             <li class="sidebar-item">
@@ -485,7 +517,7 @@
                         <div>
                             <div class="mini-stat-label">Tổng Doanh Thu</div>
                             <div class="mini-stat-val text-info">
-                                <fmt:formatNumber value="${totalRevenue}" type="number" maxFractionDigits="0"/> VNĐ
+                                <fmt:formatNumber value="<%= liveRevenue > 0 ? liveRevenue : (request.getAttribute(\"totalRevenue\") != null ? request.getAttribute(\"totalRevenue\") : 0) %>" type="number" maxFractionDigits="0"/> VNĐ
                             </div>
                         </div>
                         <i class="fa-solid fa-sack-dollar mini-stat-icon"></i>
@@ -564,7 +596,7 @@
                             <li class="task-item">
                                 <div class="task-left">
                                     <input type="checkbox" class="task-checkbox" checked>
-                                    <span class="task-text">Duyệt tài khoản hội viên mới &amp; Phân quyền Admin / IT</span>
+                                    <span class="task-text">Duyệt tài khoản hội viên mới &amp; Nạp tiền vào ví (<%= pendingTopUpCount %> chờ duyệt)</span>
                                 </div>
                                 <div class="task-actions">
                                     <a href="users" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
@@ -582,7 +614,7 @@
                             <li class="task-item">
                                 <div class="task-left">
                                     <input type="checkbox" class="task-checkbox">
-                                    <span class="task-text">Cập nhật thực đơn F&amp;B, tồn kho và tạo Combo khuyến mãi</span>
+                                    <span class="task-text">Quản lý thực đơn F&amp;B, Thuê Gear &amp; Đơn khách đặt (<%= pendingServiceCount %> đơn mới)</span>
                                 </div>
                                 <div class="task-actions">
                                     <a href="dich-vu" title="Truy cập"><i class="fa-solid fa-pen-to-square"></i></a>
@@ -614,7 +646,7 @@
 <!-- Script vẽ 3 biểu đồ đồng bộ tông màu Xanh Dương Neon -->
 <script>
     Chart.defaults.color = '#94a3b8';
-    Chart.defaults.font.family = "'Rajdhani', sans-serif";
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
 
     // 1. Pie Chart: Tình trạng máy trạm (Dữ liệu thật từ Database)
     new Chart(document.getElementById('machinePieChart'), {
