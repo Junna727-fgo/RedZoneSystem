@@ -5,14 +5,17 @@
 <%@ page import="com.redzone.model.User, com.redzone.model.TaiKhoan" %>
 <%@ page import="com.redzone.model.MenuItem" %>
 <%@ page import="com.redzone.model.ServiceOrder" %>
+<%@ page import="com.redzone.model.QrPaymentOrder" %>
 <%@ page import="com.redzone.dao.UserDAO" %>
+<%@ page import="com.redzone.util.VietQRConfig" %>
 <%
     TaiKhoan userLog = (TaiKhoan) session.getAttribute("userLog");
     if (userLog == null) userLog = (TaiKhoan) session.getAttribute("user");
 
+    UserDAO profileDao = new UserDAO();
     User currentUser = (User) session.getAttribute("currentUser");
     if (userLog != null) {
-        User freshUser = new UserDAO().getUserById(userLog.getId());
+        User freshUser = profileDao.getUserById(userLog.getId());
         if (freshUser != null) {
             currentUser = freshUser;
             session.setAttribute("currentUser", currentUser);
@@ -36,10 +39,15 @@
     List<String> gearHistory = (List<String>) session.getAttribute("gearHistory");
     List<String[]> chatHistory = (List<String[]>) session.getAttribute("chatHistory");
 
+    List<QrPaymentOrder> recentTransactions = profileDao.getUserRecentTransactions(currentUser.getUserId(), 10);
+    session.setAttribute("recentTransactions", recentTransactions);
+
     DecimalFormat df = new DecimalFormat("#,###");
     String message = (String) request.getAttribute("message");
     String error = (String) request.getAttribute("error");
     String openModalOnLoad = (String) request.getAttribute("openModalOnLoad");
+    String safeUsername = (currentUser.getUsername() != null ? currentUser.getUsername() : "MEMBER")
+            .replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
 %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -655,6 +663,7 @@
             clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%); transition: all 0.2s ease;
         }
         .submit-btn:hover { background: linear-gradient(95deg, #ffffff 0%, #52f2ff 100%); box-shadow: 0 0 22px rgba(0, 229, 255, 0.6); transform: translateX(3px); }
+        .submit-btn:disabled { opacity: 0.72; cursor: not-allowed; transform: none; }
 
         .history-list { margin-top: 16px; border-top: 1px solid rgba(0, 229, 255, 0.22); padding-top: 10px; font-size: 13px; }
         .history-list strong { display: block; color: var(--p3-cyan); letter-spacing: 1px; text-transform: uppercase; font-size: 11px; margin-bottom: 6px; }
@@ -771,7 +780,7 @@
                     <span>MENU GAME</span>
                 </button>
                 <button class="func-btn" onclick="openModal('modalTopUp')">
-                    <span class="icon"><i class="fa-solid fa-credit-card"></i></span>
+                    <span class="icon"><i class="fa-solid fa-qrcode"></i></span>
                     <span>Nạp Tiền</span>
                 </button>
                 <button class="func-btn" onclick="openModal('modalService')">
@@ -838,31 +847,64 @@
         </div>
     </div>
 
-    <!-- 1. MODAL NẠP TIỀN (GỬI YÊU CẦU CHỜ ADMIN DUYỆT) -->
+    <!-- 1. MODAL NẠP TIỀN (VIETQR ACB / TIỀN MẶT CHỜ ADMIN DUYỆT) -->
     <div id="modalTopUp" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-credit-card"></i> Gửi Yêu Cầu Nạp Tiền</h3>
+                <h3><i class="fa-solid fa-qrcode"></i> Nạp Tiền Giờ Chơi</h3>
                 <button class="close-btn" onclick="closeModal('modalTopUp')">&times;</button>
             </div>
-            <form action="<%= request.getContextPath() %>/member" method="post">
+            <form action="<%= request.getContextPath() %>/member" method="post" id="topUpForm" onsubmit="return handleTopUpSubmit(event)">
                 <input type="hidden" name="action" value="topUp">
+                <input type="hidden" name="transferCode" id="topUpTransferCode" value="">
+
                 <div class="form-group">
-                    <label>Số tiền muốn nạp (VNĐ) — 10.000đ = 1 giờ chơi</label>
-                    <input type="number" name="amount" min="10000" step="5000" value="20000" required>
+                    <label>Chọn nhanh mệnh giá (10.000đ = 1 giờ)</label>
+                    <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 8px;">
+                        <button type="button" class="cat-tab" style="padding:6px 4px; text-align:center;" onclick="setTopUpAmount(20000)">20K</button>
+                        <button type="button" class="cat-tab" style="padding:6px 4px; text-align:center;" onclick="setTopUpAmount(50000)">50K</button>
+                        <button type="button" class="cat-tab" style="padding:6px 4px; text-align:center;" onclick="setTopUpAmount(100000)">100K</button>
+                        <button type="button" class="cat-tab" style="padding:6px 4px; text-align:center;" onclick="setTopUpAmount(200000)">200K</button>
+                    </div>
+                    <input type="number" name="amount" id="topUpAmount" min="10000" step="5000" value="20000" required>
                 </div>
+
+                <div class="form-group">
+                    <label>Vị trí máy đang ngồi</label>
+                    <input type="text" name="machineCode" id="topUpMachineCode" value="VIP-01" required>
+                </div>
+
                 <div class="form-group">
                     <label>Phương thức thanh toán</label>
-                    <select name="method">
-                        <option value="TRANSFER">Chuyển khoản Ngân hàng / Quét QR (Chờ Admin duyệt)</option>
+                    <select name="method" id="topUpMethod">
+                        <option value="TRANSFER">Chuyển khoản VietQR ACB (Admin duyệt cộng tiền)</option>
                         <option value="CASH">Tiền mặt (Nhân viên thu tại máy &amp; Admin duyệt)</option>
                     </select>
                 </div>
+
                 <div style="font-size: 12px; color: var(--p3-cyan); margin-bottom: 12px; background: rgba(0, 229, 255, 0.08); padding: 8px 10px; border-left: 3px solid var(--p3-cyan);">
-                    <i class="fa-solid fa-circle-info"></i> Tiền sẽ được cộng vào tài khoản ngay sau khi Admin xác nhận giao dịch.
+                    <i class="fa-solid fa-circle-info"></i> Chọn VietQR sẽ tự sinh mã QR ngân hàng <strong><%= VietQRConfig.BANK_ID %></strong> đúng số tiền và mã nội dung chuyển khoản.
                 </div>
-                <button type="submit" class="submit-btn">GỬI YÊU CẦU CHO ADMIN</button>
+                <button type="submit" class="submit-btn">TIẾP TỤC THANH TOÁN</button>
             </form>
+
+            <% if (recentTransactions != null && !recentTransactions.isEmpty()) { %>
+            <div class="history-list">
+                <strong>Trạng thái giao dịch gần đây (từ hệ thống):</strong>
+                <% for (QrPaymentOrder tx : recentTransactions) {
+                    String stColor = "PENDING".equalsIgnoreCase(tx.getStatus()) ? "#ffd43b"
+                            : ("REJECTED".equalsIgnoreCase(tx.getStatus()) ? "#ff5c77" : "#00f5a0");
+                %>
+                    <div class="history-item" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                        <div style="min-width:0;">
+                            <div style="font-weight:700; color:#fff; font-size:12px;">#<%= tx.getOrderId() %> • <%= tx.getTypeLabel() %> — <%= df.format(tx.getFinalAmount()) %>đ</div>
+                            <div style="font-size:11px; color:var(--p3-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><%= tx.getItemName() %></div>
+                        </div>
+                        <span style="color:<%= stColor %>; font-weight:800; font-size:11px; white-space:nowrap;">[<%= tx.getStatusLabel() %>]</span>
+                    </div>
+                <% } %>
+            </div>
+            <% } %>
         </div>
     </div>
 
@@ -947,6 +989,7 @@
 
                     <form action="<%= request.getContextPath() %>/member" method="post" id="foodOrderForm" onsubmit="return handleOrderSubmit(event, 'FOOD')">
                         <input type="hidden" name="action" value="orderCart">
+                        <input type="hidden" name="transferCode" id="foodTransferCode" value="">
                         <div id="foodCartHiddenInputs"></div>
 
                         <div class="form-group" style="margin-top: 6px;">
@@ -958,7 +1001,7 @@
                             <label>Phương thức thanh toán</label>
                             <select name="paymentMethod" id="foodPaymentMethod">
                                 <option value="CASH">Tiền mặt (Nhân viên thu khi mang đồ ra)</option>
-                                <option value="TRANSFER">Chuyển khoản Ngân hàng / Quét QR</option>
+                                <option value="TRANSFER">Chuyển khoản VietQR ACB (Admin duyệt)</option>
                             </select>
                         </div>
 
@@ -1040,7 +1083,6 @@
                        } %>
                 </div>
 
-                <!-- BÊN TAY PHẢI: GIỎ HÀNG THUÊ GEAR -->
                 <div class="cart-panel">
                     <div class="cart-title">
                         <span><i class="fa-solid fa-headset"></i> Giỏ Thuê Thiết Bị</span>
@@ -1053,6 +1095,7 @@
 
                     <form action="<%= request.getContextPath() %>/member" method="post" id="gearOrderForm" onsubmit="return handleOrderSubmit(event, 'GEAR')">
                         <input type="hidden" name="action" value="rentGearCart">
+                        <input type="hidden" name="transferCode" id="gearTransferCode" value="">
                         <div id="gearCartHiddenInputs"></div>
 
                         <div class="form-group" style="margin-top: 6px;">
@@ -1064,7 +1107,7 @@
                             <label>Phương thức thanh toán</label>
                             <select name="paymentMethod" id="gearPaymentMethod">
                                 <option value="CASH">Tiền mặt (Nhân viên thu khi giao Gear)</option>
-                                <option value="TRANSFER">Chuyển khoản Ngân hàng / Quét QR</option>
+                                <option value="TRANSFER">Chuyển khoản VietQR ACB (Admin duyệt)</option>
                             </select>
                         </div>
 
@@ -1142,35 +1185,38 @@
         </div>
     </div>
 
-    <!-- 6. MODAL THANH TOÁN & ĐẶT HÀNG THÀNH CÔNG -->
+    <!-- 6. MODAL THANH TOÁN VIETQR ACB & XÁC NHẬN -->
     <div id="modalPaymentSuccess" class="modal" style="z-index: 2000;">
-        <div class="modal-content" style="width: 440px; text-align: center;">
+        <div class="modal-content" style="width: 470px; text-align: center;">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-receipt"></i> XÁC NHẬN THANH TOÁN</h3>
+                <h3><i class="fa-solid fa-qrcode"></i> XÁC NHẬN THANH TOÁN</h3>
                 <button class="close-btn" onclick="closeModal('modalPaymentSuccess')">&times;</button>
             </div>
 
-            <div style="font-size: 46px; color: var(--p3-success); margin: 6px 0;">
-                <i class="fa-solid fa-circle-check"></i>
-            </div>
-            <h2 style="font-weight: 900; font-style: italic; color: var(--p3-success); font-size: 20px; margin-bottom: 8px;">
-                ĐẶT HÀNG THÀNH CÔNG!
+            <h2 id="payModalHeading" style="font-weight: 900; font-style: italic; color: var(--p3-cyan); font-size: 19px; margin-bottom: 6px;">
+                QUÉT MÃ VIETQR ĐỂ THANH TOÁN
             </h2>
-            <p id="paySuccessSubtitle" style="color: #cfe4ff; font-size: 13px; margin-bottom: 14px;"></p>
+            <p id="paySuccessSubtitle" style="color: #cfe4ff; font-size: 13px; margin-bottom: 12px;"></p>
 
-            <div id="qrPaymentBox" style="display: none; background: #fff; padding: 12px; margin: 0 auto 14px; width: 210px; border: 3px solid var(--p3-cyan);">
-                <img id="qrPaymentImg" src="" alt="QR Thanh Toán" style="width: 100%; display: block;">
-                <div style="color: #020a18; font-weight: 800; font-size: 11px; margin-top: 6px;">QUÉT MÃ QR ĐỂ CHUYỂN KHOẢN</div>
+            <div id="qrPaymentBox" style="display: none; background: #fff; padding: 10px; margin: 0 auto 12px; width: 250px; border: 3px solid var(--p3-cyan); border-radius: 6px;">
+                <img id="qrPaymentImg" src="" alt="VietQR ACB" style="width: 100%; display: block;">
+                <div style="color: #020a18; font-weight: 800; font-size: 11px; margin-top: 6px;">
+                    <%= VietQRConfig.BANK_ID %> • <%= VietQRConfig.ACCOUNT_NO %> • <%= VietQRConfig.ACCOUNT_NAME %>
+                </div>
             </div>
 
-            <div style="background: rgba(2, 10, 26, 0.9); border: 1px solid rgba(0, 229, 255, 0.3); padding: 12px; margin-bottom: 16px; text-align: left; font-size: 13px;">
+            <div style="background: rgba(2, 10, 26, 0.9); border: 1px solid rgba(0, 229, 255, 0.3); padding: 12px; margin-bottom: 14px; text-align: left; font-size: 13px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <span style="color: var(--p3-muted);">Vị trí máy:</span>
                     <strong id="payMachineLabel" style="color: #fff;">VIP-01</strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
                     <span style="color: var(--p3-muted);">Hình thức:</span>
-                    <strong id="payMethodLabel" style="color: var(--p3-cyan);">Tiền mặt</strong>
+                    <strong id="payMethodLabel" style="color: var(--p3-cyan);">VietQR ACB</strong>
+                </div>
+                <div id="payCodeRow" style="display: none; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="color: var(--p3-muted);">Nội dung CK:</span>
+                    <strong id="payCodeLabel" style="color: #ffd43b;"></strong>
                 </div>
                 <div style="display: flex; justify-content: space-between; border-top: 1px dashed rgba(0,229,255,0.25); padding-top: 6px;">
                     <span style="color: var(--p3-muted);">Tổng tiền thanh toán:</span>
@@ -1178,8 +1224,8 @@
                 </div>
             </div>
 
-            <button type="button" class="submit-btn" onclick="confirmFinalSubmit()">
-                HOÀN TẤT &amp; GỬI ĐƠN XUỐNG QUẦY
+            <button type="button" id="payConfirmBtn" class="submit-btn" onclick="confirmFinalSubmit()">
+                TÔI ĐÃ CHUYỂN KHOẢN - GỬI ADMIN DUYỆT
             </button>
         </div>
     </div>
@@ -1455,48 +1501,113 @@
             badgeEl.innerText = keys.length + ' thiết bị';
         }
 
-        // 6. Xử lý Popup Thanh toán (Tiền mặt / Chuyển khoản QR) & Đặt hàng thành công
+        // 6. Xử lý Popup VietQR ACB (Nạp giờ chơi + Gọi món + Thuê Gear)
+        const VIETQR_BANK = '<%= VietQRConfig.BANK_ID %>';
+        const VIETQR_ACC = '<%= VietQRConfig.ACCOUNT_NO %>';
+        const VIETQR_NAME = '<%= VietQRConfig.ACCOUNT_NAME %>';
+        const CURRENT_USERNAME = '<%= safeUsername %>';
+
         let pendingSubmitForm = null;
 
-        function handleOrderSubmit(event, type) {
-            event.preventDefault();
-            let isFood = (type === 'FOOD');
-            let cartObj = isFood ? foodCart : gearCart;
+        function setTopUpAmount(val) {
+            document.getElementById('topUpAmount').value = val;
+        }
 
-            if (Object.keys(cartObj).length === 0) {
-                alert(isFood ? "Giỏ hàng món ăn đang trống!" : "Giỏ thuê Gear đang trống!");
-                return false;
-            }
+        function generateTransferCode(prefix) {
+            const rand = Math.floor(1000 + Math.random() * 9000);
+            return 'RZ ' + prefix + ' ' + CURRENT_USERNAME + ' ' + rand;
+        }
 
-            let machine = document.getElementById(isFood ? 'foodMachineCode' : 'gearMachineCode').value;
-            let method = document.getElementById(isFood ? 'foodPaymentMethod' : 'gearPaymentMethod').value;
-            let totalText = document.getElementById(isFood ? 'foodCartTotal' : 'gearCartTotal').innerText;
-            let numericAmount = totalText.replace(/[^\d]/g, '');
+        function buildVietQrUrl(amount, addInfo) {
+            return 'https://img.vietqr.io/image/' + VIETQR_BANK + '-' + VIETQR_ACC + '-compact2.png'
+                + '?amount=' + amount
+                + '&addInfo=' + encodeURIComponent(addInfo)
+                + '&accountName=' + encodeURIComponent(VIETQR_NAME);
+        }
 
+        function openPaymentModal(formEl, machine, method, numericAmount, transferCode, titleText) {
             document.getElementById('payMachineLabel').innerText = machine;
-            document.getElementById('payAmountLabel').innerText = totalText;
+            document.getElementById('payAmountLabel').innerText = Number(numericAmount).toLocaleString('vi-VN') + ' VNĐ';
 
             const qrBox = document.getElementById('qrPaymentBox');
             const qrImg = document.getElementById('qrPaymentImg');
+            const codeRow = document.getElementById('payCodeRow');
+            const codeLabel = document.getElementById('payCodeLabel');
+            const heading = document.getElementById('payModalHeading');
+            const confirmBtn = document.getElementById('payConfirmBtn');
+            confirmBtn.disabled = false;
 
             if (method === 'TRANSFER') {
-                document.getElementById('payMethodLabel').innerText = "Chuyển khoản QR";
-                document.getElementById('paySuccessSubtitle').innerText = "Vui lòng quét mã QR bên dưới để thanh toán đơn hàng:";
-                qrImg.src = "https://img.vietqr.io/image/MB-0999999999-compact2.png?amount=" + numericAmount + "&addInfo=REDZONE%20" + encodeURIComponent(machine);
-                qrBox.style.display = "block";
+                heading.innerText = titleText || 'QUÉT MÃ VIETQR ACB ĐỂ THANH TOÁN';
+                document.getElementById('payMethodLabel').innerText = 'Chuyển khoản VietQR (' + VIETQR_BANK + ')';
+                document.getElementById('paySuccessSubtitle').innerText = 'Quét mã bên dưới bằng App ngân hàng, sau khi chuyển xong bấm nút xác nhận để Admin duyệt:';
+                qrImg.src = buildVietQrUrl(numericAmount, transferCode);
+                qrBox.style.display = 'block';
+                codeLabel.innerText = transferCode;
+                codeRow.style.display = 'flex';
+                confirmBtn.innerText = 'TÔI ĐÃ CHUYỂN KHOẢN - GỬI ADMIN DUYỆT';
             } else {
-                document.getElementById('payMethodLabel').innerText = "Tiền mặt tại máy";
-                document.getElementById('paySuccessSubtitle').innerText = "Nhân viên sẽ mang đơn ra tận máy và thu tiền mặt trực tiếp.";
-                qrBox.style.display = "none";
+                heading.innerText = 'XÁC NHẬN ĐƠN TIỀN MẶT';
+                document.getElementById('payMethodLabel').innerText = 'Tiền mặt tại máy';
+                document.getElementById('paySuccessSubtitle').innerText = 'Nhân viên sẽ đến tận máy thu tiền và phục vụ ngay.';
+                qrBox.style.display = 'none';
+                codeRow.style.display = 'none';
+                confirmBtn.innerText = 'HOÀN TẤT & GỬI ĐƠN XUỐNG QUẦY';
             }
 
-            pendingSubmitForm = document.getElementById(isFood ? 'foodOrderForm' : 'gearOrderForm');
+            pendingSubmitForm = formEl;
             openModal('modalPaymentSuccess');
+        }
+
+        function handleTopUpSubmit(event) {
+            event.preventDefault();
+            const amount = parseInt(document.getElementById('topUpAmount').value || '0', 10);
+            if (isNaN(amount) || amount < 10000) {
+                alert('Số tiền nạp tối thiểu là 10.000 VNĐ!');
+                return false;
+            }
+            const machine = document.getElementById('topUpMachineCode').value || 'VIP-01';
+            const method = document.getElementById('topUpMethod').value;
+            const code = (method === 'TRANSFER') ? generateTransferCode('NAP') : '';
+            document.getElementById('topUpTransferCode').value = code;
+
+            openPaymentModal(document.getElementById('topUpForm'), machine, method, amount, code, 'QUÉT VIETQR NẠP GIỜ CHƠI');
+            return false;
+        }
+
+        function handleOrderSubmit(event, type) {
+            event.preventDefault();
+            const isFood = (type === 'FOOD');
+            const cartObj = isFood ? foodCart : gearCart;
+
+            if (Object.keys(cartObj).length === 0) {
+                alert(isFood ? 'Giỏ hàng món ăn đang trống!' : 'Giỏ thuê Gear đang trống!');
+                return false;
+            }
+
+            const machine = document.getElementById(isFood ? 'foodMachineCode' : 'gearMachineCode').value || 'VIP-01';
+            const method = document.getElementById(isFood ? 'foodPaymentMethod' : 'gearPaymentMethod').value;
+            const totalText = document.getElementById(isFood ? 'foodCartTotal' : 'gearCartTotal').innerText;
+            const numericAmount = totalText.replace(/[^\d]/g, '');
+            const code = (method === 'TRANSFER') ? generateTransferCode(isFood ? 'FNB' : 'GEAR') : '';
+            document.getElementById(isFood ? 'foodTransferCode' : 'gearTransferCode').value = code;
+
+            openPaymentModal(
+                document.getElementById(isFood ? 'foodOrderForm' : 'gearOrderForm'),
+                machine,
+                method,
+                numericAmount,
+                code,
+                isFood ? 'QUÉT VIETQR THANH TOÁN ĐỒ ĂN' : 'QUÉT VIETQR THUÊ GEAR'
+            );
             return false;
         }
 
         function confirmFinalSubmit() {
             if (pendingSubmitForm) {
+                const btn = document.getElementById('payConfirmBtn');
+                btn.disabled = true;
+                btn.innerText = 'ĐANG GỬI YÊU CẦU...';
                 pendingSubmitForm.submit();
             }
         }
@@ -1561,6 +1672,6 @@
             })
             .catch(function(err) { console.error("Lỗi đồng bộ giờ chơi:", err); });
         }, 60000);
-    </script>s
+    </script>
 </body>
 </html>

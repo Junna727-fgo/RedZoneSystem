@@ -11,6 +11,7 @@
     int countInUse = 0;
     int countMaintenance = 0;
     double liveRevenue = 0;
+    int pendingQrCount = 0;
     int pendingTopUpCount = 0;
     int pendingServiceCount = 0;
     int unreadMsg = TinNhanStore.countUnread();
@@ -31,7 +32,7 @@
         }
 
         try (Connection conn = DBConnection.getConnection()) {
-            // 1. Tổng doanh thu thực tế (Đơn F&B/Gear + Yêu cầu nạp tiền đã duyệt)
+            // 1. Tổng doanh thu thực tế (Đơn F&B/Gear đã duyệt + Yêu cầu nạp tiền đã duyệt)
             try (PreparedStatement ps = conn.prepareStatement(
                     "SELECT ISNULL(SUM(final_amount), 0) FROM ServiceOrders WHERE status IN ('SERVING', 'COMPLETED', 'APPROVED')");
                  ResultSet rs = ps.executeQuery()) {
@@ -40,7 +41,16 @@
                 }
             }
 
-            // 2. Số yêu cầu nạp tiền từ Member đang chờ duyệt
+            // 2. Tổng tất cả đơn thanh toán QR / Nạp tiền đang chờ Admin duyệt
+            try (PreparedStatement psQr = conn.prepareStatement(
+                    "SELECT COUNT(*) FROM ServiceOrders WHERE status = 'PENDING'");
+                 ResultSet rsQr = psQr.executeQuery()) {
+                if (rsQr.next()) {
+                    pendingQrCount = rsQr.getInt(1);
+                }
+            }
+
+            // 3. Số yêu cầu nạp tiền từ Member đang chờ duyệt
             try (PreparedStatement ps2 = conn.prepareStatement(
                     "SELECT COUNT(*) FROM ServiceOrders WHERE promo_code = 'TOPUP' AND status = 'PENDING'");
                  ResultSet rs2 = ps2.executeQuery()) {
@@ -49,9 +59,9 @@
                 }
             }
 
-            // 3. Số đơn F&B / Thuê Gear đang chờ phục vụ
+            // 4. Số đơn F&B / Thuê Gear đang chờ phục vụ (đã duyệt QR hoặc tiền mặt)
             try (PreparedStatement ps3 = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM ServiceOrders WHERE ISNULL(promo_code, '') <> 'TOPUP' AND status <> 'COMPLETED'");
+                    "SELECT COUNT(*) FROM ServiceOrders WHERE ISNULL(promo_code, '') <> 'TOPUP' AND status = 'SERVING'");
                  ResultSet rs3 = ps3.executeQuery()) {
                 if (rs3.next()) {
                     pendingServiceCount = rs3.getInt(1);
@@ -420,6 +430,15 @@
                 </a>
             </li>
             <li class="sidebar-item">
+                <a href="duyet-qr" class="sidebar-link">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>Duyệt Thanh Toán QR</span>
+                    <% if (pendingQrCount > 0) { %>
+                        <span class="badge bg-danger ms-auto"><%= pendingQrCount %></span>
+                    <% } %>
+                </a>
+            </li>
+            <li class="sidebar-item">
                 <a href="users" class="sidebar-link">
                     <i class="fa-solid fa-users-gear"></i>
                     <span>Quản Lý Tài Khoản</span>
@@ -589,10 +608,19 @@
                                 <h5 class="card-title-custom">Tác Vụ Quản Trị Hệ Thống</h5>
                                 <div class="card-subtitle-custom">Phím tắt xử lý nhanh các nghiệp vụ Admin</div>
                             </div>
-                            <span class="badge bg-primary">4 Module</span>
+                            <span class="badge bg-primary">5 Module</span>
                         </div>
 
                         <ul class="task-list">
+                            <li class="task-item">
+                                <div class="task-left">
+                                    <input type="checkbox" class="task-checkbox" <%= pendingQrCount == 0 ? "checked" : "" %>>
+                                    <span class="task-text">Duyệt thanh toán VietQR (Nạp giờ &amp; Dịch vụ) (<%= pendingQrCount %> chờ duyệt)</span>
+                                </div>
+                                <div class="task-actions">
+                                    <a href="duyet-qr" title="Mở trang duyệt QR"><i class="fa-solid fa-qrcode"></i></a>
+                                </div>
+                            </li>
                             <li class="task-item">
                                 <div class="task-left">
                                     <input type="checkbox" class="task-checkbox" checked>

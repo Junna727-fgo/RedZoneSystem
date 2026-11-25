@@ -43,7 +43,6 @@ public class MemberPortalServlet extends HttpServlet {
             return false;
         }
 
-        // Luôn đồng bộ lại số dư mới nhất từ SQL Server
         User dbUser = userDAO.getUserById(userLog.getId());
         User currentUser = (User) session.getAttribute("currentUser");
         if (dbUser != null) {
@@ -84,7 +83,6 @@ public class MemberPortalServlet extends HttpServlet {
         gameList.add(new String[]{"Genshin Impact", "RPG • HoYoverse", "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?w=400&q=80", "RPG", "RPG"});
         session.setAttribute("gameList", gameList);
 
-        // Lấy danh sách Gear và Menu F&B kèm ảnh gốc từ bảng MON_AN_DO_UONG (đồng bộ 100% với Admin)
         List<String[]> gearList = new ArrayList<>();
         List<MenuItem> dbMenuItems = new ArrayList<>();
         try {
@@ -131,6 +129,9 @@ public class MemberPortalServlet extends HttpServlet {
             dbMenuItems = userDAO.getMenuItems();
         }
         session.setAttribute("menuItems", dbMenuItems);
+
+        // Nạp lịch sử giao dịch thực tế từ SQL để khách theo dõi trạng thái Admin duyệt
+        session.setAttribute("recentTransactions", userDAO.getUserRecentTransactions(currentUser.getUserId(), 10));
 
         updateRemainingTime(session, currentUser.getBalance());
         return true;
@@ -208,15 +209,18 @@ public class MemberPortalServlet extends HttpServlet {
                 BigDecimal amount = new BigDecimal(request.getParameter("amount"));
                 String method = request.getParameter("method");
                 String machineCode = request.getParameter("machineCode");
+                String transferCode = request.getParameter("transferCode");
                 if (machineCode == null || machineCode.trim().isEmpty()) {
                     machineCode = "VIP-01";
                 }
 
                 if (amount.compareTo(BigDecimal.ZERO) > 0) {
-                    String methodLabel = "TRANSFER".equals(method) ? "Chuyển khoản QR" : "Tiền mặt tại máy";
+                    String methodLabel = "TRANSFER".equals(method)
+                            ? ("VietQR ACB" + (transferCode != null && !transferCode.trim().isEmpty() ? " | Mã CK: " + transferCode.trim() : ""))
+                            : "Tiền mặt tại máy";
                     boolean ok = userDAO.createTopUpRequest(currentUser.getUserId(), machineCode, amount, methodLabel);
                     if (ok) {
-                        request.setAttribute("message", "Đã gửi yêu cầu nạp " + df.format(amount) + " VNĐ (" + methodLabel + ")! Quầy Admin đang duyệt cộng tiền cho bạn.");
+                        request.setAttribute("message", "Đã gửi yêu cầu nạp " + df.format(amount) + " VNĐ (" + methodLabel + ")! Vui lòng chờ Admin xác nhận cộng tiền.");
                     } else {
                         request.setAttribute("error", "Lỗi lưu yêu cầu nạp tiền xuống Database!");
                     }
@@ -231,7 +235,9 @@ public class MemberPortalServlet extends HttpServlet {
         } else if ("orderCart".equals(action)) {
             String machineCode = request.getParameter("machineCode");
             String paymentMethod = request.getParameter("paymentMethod");
-            String payTag = "TRANSFER".equals(paymentMethod) ? "CK QR" : "Tiền mặt";
+            String transferCode = request.getParameter("transferCode");
+            boolean isQr = "TRANSFER".equals(paymentMethod);
+            String payTag = isQr ? "CK VietQR" : "Tiền mặt";
             String[] itemIds = request.getParameterValues("itemIds");
             String[] quantities = request.getParameterValues("quantities");
 
@@ -240,6 +246,7 @@ public class MemberPortalServlet extends HttpServlet {
                 List<ServiceOrder> orders = (List<ServiceOrder>) session.getAttribute("orderHistory");
                 BigDecimal grandTotal = BigDecimal.ZERO;
                 int totalItems = 0;
+                StringBuilder qrSummary = new StringBuilder();
 
                 for (int i = 0; i < itemIds.length; i++) {
                     int id = Integer.parseInt(itemIds[i]);
@@ -260,19 +267,39 @@ public class MemberPortalServlet extends HttpServlet {
                         grandTotal = grandTotal.add(subTotal);
                         totalItems += qty;
 
-                        userDAO.createServiceOrder(currentUser.getUserId(), machineCode, found.getItemName() + " [" + payTag + "]", qty, "FNB", subTotal);
-                        orders.add(0, new ServiceOrder(orders.size() + 1, machineCode, found.getItemName(), qty, payTag, subTotal, "Đang chuẩn bị"));
+                        if (isQr) {
+                            if (qrSummary.length() > 0) qrSummary.append(", ");
+                            qrSummary.append(qty).append("x ").append(found.getItemName());
+                            orders.add(0, new ServiceOrder(orders.size() + 1, machineCode, found.getItemName(), qty, payTag, subTotal, "Chờ Admin duyệt QR"));
+                        } else {
+                            userDAO.createServiceOrderWithStatus(currentUser.getUserId(), machineCode,
+                                    found.getItemName() + " [Tiền mặt]", qty, "FNB", subTotal, "SERVING");
+                            orders.add(0, new ServiceOrder(orders.size() + 1, machineCode, found.getItemName(), qty, payTag, subTotal, "Đang chuẩn bị"));
+                        }
                     }
                 }
+
+                // Với đơn QR: gom 1 bản ghi tổng tiền ở trạng thái PENDING để Admin đối chiếu 1-1 với chuyển khoản
+                if (isQr && totalItems > 0) {
+                    String qrItemLabel = qrSummary.toString() + " [VietQR"
+                            + (transferCode != null && !transferCode.trim().isEmpty() ? " | " + transferCode.trim() : "") + "]";
+                    userDAO.createServiceOrderWithStatus(currentUser.getUserId(), machineCode,
+                            qrItemLabel, totalItems, "FNB", grandTotal, "PENDING");
+                    request.setAttribute("message", "Đã gửi đơn " + totalItems + " món (Tổng: " + df.format(grandTotal) + " VNĐ - VietQR)! Chờ Admin duyệt chuyển khoản để quầy ra món.");
+                } else if (totalItems > 0) {
+                    request.setAttribute("message", "Đặt thành công " + totalItems + " món tới máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Nhân viên đang mang ra.");
+                }
+
                 session.setAttribute("orderHistory", orders);
-                request.setAttribute("message", "Đặt thành công " + totalItems + " món tới máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Nhân viên đang mang ra.");
                 request.setAttribute("openModalOnLoad", "modalService");
             }
 
         } else if ("rentGearCart".equals(action)) {
             String machineCode = request.getParameter("machineCode");
             String paymentMethod = request.getParameter("paymentMethod");
-            String payTag = "TRANSFER".equals(paymentMethod) ? "CK QR" : "Tiền mặt";
+            String transferCode = request.getParameter("transferCode");
+            boolean isQr = "TRANSFER".equals(paymentMethod);
+            String payTag = isQr ? "CK VietQR" : "Tiền mặt";
             String[] gearIds = request.getParameterValues("gearIds");
             String[] gearHours = request.getParameterValues("gearHours");
 
@@ -280,6 +307,8 @@ public class MemberPortalServlet extends HttpServlet {
                 List<String[]> gearList = (List<String[]>) session.getAttribute("gearList");
                 List<String> gearHistory = (List<String>) session.getAttribute("gearHistory");
                 BigDecimal grandTotal = BigDecimal.ZERO;
+                int totalGears = 0;
+                StringBuilder qrSummary = new StringBuilder();
 
                 for (int i = 0; i < gearIds.length; i++) {
                     String gId = gearIds[i];
@@ -292,15 +321,33 @@ public class MemberPortalServlet extends HttpServlet {
                             BigDecimal price = new BigDecimal(g[2]);
                             BigDecimal subTotal = price.multiply(new BigDecimal(hrs));
                             grandTotal = grandTotal.add(subTotal);
+                            totalGears++;
 
-                            userDAO.createServiceOrder(currentUser.getUserId(), machineCode, "Thuê Gear: " + gName + " (" + hrs + "h) [" + payTag + "]", 1, "GEAR", subTotal);
-                            gearHistory.add(0, gName + " (" + hrs + " giờ) tại máy " + machineCode + " - " + df.format(subTotal) + " VNĐ [" + payTag + "]");
+                            if (isQr) {
+                                if (qrSummary.length() > 0) qrSummary.append(", ");
+                                qrSummary.append(gName).append(" (").append(hrs).append("h)");
+                                gearHistory.add(0, gName + " (" + hrs + " giờ) tại máy " + machineCode + " - " + df.format(subTotal) + " VNĐ [Chờ Admin duyệt QR]");
+                            } else {
+                                userDAO.createServiceOrderWithStatus(currentUser.getUserId(), machineCode,
+                                        "Thuê Gear: " + gName + " (" + hrs + "h) [Tiền mặt]", 1, "GEAR", subTotal, "SERVING");
+                                gearHistory.add(0, gName + " (" + hrs + " giờ) tại máy " + machineCode + " - " + df.format(subTotal) + " VNĐ [Tiền mặt]");
+                            }
                             break;
                         }
                     }
                 }
+
+                if (isQr && totalGears > 0) {
+                    String qrGearLabel = "Thuê Gear: " + qrSummary.toString() + " [VietQR"
+                            + (transferCode != null && !transferCode.trim().isEmpty() ? " | " + transferCode.trim() : "") + "]";
+                    userDAO.createServiceOrderWithStatus(currentUser.getUserId(), machineCode,
+                            qrGearLabel, totalGears, "GEAR", grandTotal, "PENDING");
+                    request.setAttribute("message", "Đã gửi đơn thuê Gear (Tổng: " + df.format(grandTotal) + " VNĐ - VietQR)! Chờ Admin duyệt chuyển khoản.");
+                } else if (totalGears > 0) {
+                    request.setAttribute("message", "Thuê thành công Gaming Gear tại máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Kỹ thuật viên IT đang mang thiết bị ra.");
+                }
+
                 session.setAttribute("gearHistory", gearHistory);
-                request.setAttribute("message", "Thuê thành công Gaming Gear tại máy " + machineCode + " (Tổng: " + df.format(grandTotal) + " VNĐ)! Kỹ thuật viên IT đang mang thiết bị ra.");
                 request.setAttribute("openModalOnLoad", "modalGear");
             }
 
@@ -322,6 +369,8 @@ public class MemberPortalServlet extends HttpServlet {
             }
         }
 
+        // Làm mới lại danh sách giao dịch gần nhất ngay sau POST
+        session.setAttribute("recentTransactions", userDAO.getUserRecentTransactions(currentUser.getUserId(), 10));
         request.getRequestDispatcher("/profile.jsp").forward(request, response);
     }
 }
